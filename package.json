@@ -1,0 +1,13 @@
+{
+  "name": "verilex",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Semantic Legal Discovery & Explanation Platform for Indian legal research",
+  "scripts": {
+    "install:all": "npm install --prefix verilex-backend && npm install --prefix verilex-client",
+    "migrate": "npm run migrate --prefix verilex-backend",
+    "dev:backend": "npm run dev --prefix verilex-backend",
+    "dev:client": "npm run dev --prefix verilex-client",
+    "build:client": "npm run build --prefix verilex-client"
+  }
+}
