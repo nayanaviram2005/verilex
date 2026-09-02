@@ -55,7 +55,7 @@ export default function LandingPage() {
           <p className="muted small" style={{ marginTop: 0, maxWidth: 560 }}>
             An account is required to run a search — this keeps a history of the legal material
             you've reviewed and lets the explanation layer stay tied to your own scenarios.
-            Authentication is Google-only; no password to create or remember.
+            Continue with Google, or use email and password if you prefer.
           </p>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>

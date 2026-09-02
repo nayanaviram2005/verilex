@@ -19,8 +19,11 @@
   --border: #33392c;
   --border-strong: #eef0e8;
 
-  --mono: "JetBrains Mono", "IBM Plex Mono", "Courier New", monospace;
-  --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  /* IBM Plex Mono is the only typeface for normal site text — headings,
+     body copy, labels, buttons, inputs. Both tokens point to it so any
+     future use of --sans doesn't reintroduce a second typeface. */
+  --mono: "IBM Plex Mono", "JetBrains Mono", "Courier New", monospace;
+  --sans: "IBM Plex Mono", "JetBrains Mono", "Courier New", monospace;
 
   --border-w: 2px;
   --border-w-thick: 3px;
