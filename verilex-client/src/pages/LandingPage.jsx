@@ -21,7 +21,7 @@ const PIPELINE_STEPS = [
  * the actual application lives at /app, behind sign-in.
  */
 export default function LandingPage() {
-  const { status, signIn } = useAuth();
+  const { status } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -59,10 +59,10 @@ export default function LandingPage() {
           </p>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <button type="button" className="btn primary" onClick={() => signIn('/app')}>
+            <button type="button" className="btn primary" onClick={() => navigate('/login?returnTo=%2Fapp')}>
               Sign In / Create Account →
             </button>
-            <span className="mono small muted">continues with Google — no separate signup form</span>
+            <span className="mono small muted">Google or email — one entry point</span>
           </div>
         </div>
 
@@ -144,7 +144,7 @@ export default function LandingPage() {
         </div>
 
         <div className="row" style={{ marginTop: 20 }}>
-          <button type="button" className="btn" onClick={() => signIn('/app')}>
+          <button type="button" className="btn" onClick={() => navigate('/login?returnTo=%2Fapp')}>
             Sign In / Create Account →
           </button>
         </div>

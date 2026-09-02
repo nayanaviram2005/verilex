@@ -206,6 +206,7 @@ button {
 .tag.dim { border-color: var(--border); color: var(--ink-dim); }
 
 .btn {
+  display: inline-block;
   font-family: var(--mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -215,12 +216,14 @@ button {
   border: var(--border-w) solid var(--border-strong);
   background: transparent;
   color: var(--ink);
+  text-decoration: none;
   transition: none;
 }
 
 .btn:hover:not(:disabled) {
   background: var(--ink);
   color: #000;
+  text-decoration: none;
 }
 
 .btn:disabled {

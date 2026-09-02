@@ -73,7 +73,7 @@ function AccountMenu() {
 }
 
 function AuthControls() {
-  const { status, signIn } = useAuth();
+  const { status } = useAuth();
 
   if (status === AUTH_STATUS.AUTHENTICATING) {
     return <span className="mono small muted">checking session…</span>;
@@ -83,14 +83,17 @@ function AuthControls() {
     return <AccountMenu />;
   }
 
+  // Both buttons land on the same /login entry point (Google + email/
+  // password, with a sign-in/sign-up toggle) rather than jumping straight
+  // into the Google redirect — Google is one option there, not the only one.
   return (
     <div className="row" style={{ gap: 8 }}>
-      <button type="button" className="btn ghost" onClick={() => signIn('/app')}>
+      <Link to="/login?returnTo=%2Fapp" className="btn ghost">
         Sign in
-      </button>
-      <button type="button" className="btn" onClick={() => signIn('/app')}>
+      </Link>
+      <Link to="/login?returnTo=%2Fapp" className="btn">
         Create account
-      </button>
+      </Link>
     </div>
   );
 }
