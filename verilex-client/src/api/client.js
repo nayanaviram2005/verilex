@@ -43,6 +43,10 @@ export const api = {
   authStatus: () => request('/auth/status'),
   me: () => request('/auth/me'),
   logout: () => request('/auth/logout', { method: 'POST' }),
+  signup: ({ email, password, confirmPassword }) =>
+    request('/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, confirmPassword }) }),
+  login: ({ email, password }) =>
+    request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
 
   listSearches: () => request('/searches'),
 };

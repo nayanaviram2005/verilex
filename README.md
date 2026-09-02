@@ -172,7 +172,7 @@ common `NormalizedLegalSource` model — no other code needs to change. To add
 another provider (IndiaCode, Nyaykosh, etc.), implement
 `LegalSourceProvider` and register it in `src/providers/index.js`.
 
-## Authentication (Google OAuth)
+## Authentication (Google OAuth + email/password)
 
 An account is required to use the legal-search functionality. `/` is a
 public, static landing page that explains the product and never performs a
@@ -184,7 +184,30 @@ server-side (`requireAuth` on every `/api/search*`, `/api/sources/*` and
 `/api/explain*` route) — the API rejects unauthenticated requests even if a
 client bypassed the UI guard.
 
-**Setup:**
+Two independent ways in, feeding the same user/session model:
+
+```
+                    AUTHENTICATION
+                          │
+             ┌────────────┴────────────┐
+             ↓                         ↓
+        GOOGLE OAUTH             EMAIL + PASSWORD
+             │                         │
+             └────────────┬────────────┘
+                          ↓
+                       USER (users table)
+                          ↓
+                  SESSION (PostgreSQL-backed)
+                          ↓
+                     APPLICATION (/app)
+```
+
+Google is preferred (fewer steps, nothing to remember), but email/password
+is always available — on `/login` and never gated behind OAuth being up —
+so a Google outage, block, or simple preference never leaves someone
+without a way to sign in.
+
+**Google setup:**
 
 1. In [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials),
    create an OAuth 2.0 Client ID (application type: Web application).
@@ -196,26 +219,63 @@ client bypassed the UI guard.
    report Google sign-in as enabled.
 
 If these are left unset, the app still runs — the login screen shows
-"Google sign-in is not configured" instead of erroring, and every route that
-doesn't require an account keeps working.
+"Google sign-in is not configured" and simply offers the email/password
+form instead of erroring.
 
-**How it works:**
+**Email/password:** no setup required — it works out of the box. On
+`/login`, "Continue with Google" sits above a divider and an email/password
+form with a sign-in/sign-up toggle; both paths land on the same screen, per
+the single-entry-point approach.
 
-- Server-side only, via the standard `passport-google-oauth20` strategy —
-  no manual OAuth token exchange, no client secret ever reaches the frontend.
+- **Sign-up** (`POST /api/auth/signup`): validates email format and a
+  password policy (8+ characters, at least one letter and one number) with
+  `zod`, confirms `password === confirmPassword`, then hashes the password
+  with `bcryptjs` (cost factor 12) — the plaintext password is never
+  logged, stored, or sent anywhere else. If the email already belongs to a
+  password account, sign-up is rejected (409, "already exists — sign in
+  instead"); if it belongs to an OAuth-only account, the password is
+  attached to that *same* account (see "same internal model" below) instead
+  of creating a duplicate.
+- **Sign-in** (`POST /api/auth/login`): a `passport-local` strategy
+  (`src/auth/passport.js`) looks up the user by email and compares the
+  submitted password against the stored hash with `bcrypt.compare`. An
+  unknown email and a wrong password return the same generic "Invalid email
+  or password" (401) so the endpoint can't be used to enumerate accounts.
+  All credential verification happens here, server-side — the frontend
+  never validates or hashes a password itself.
+- Both `/api/auth/signup` and `/api/auth/login` sit behind a dedicated,
+  tighter rate limit (`authRateLimiter`, 20 requests/15 min/IP) on top of
+  the general API limit, to blunt credential-guessing attempts.
+- **Duplicate/failure handling surfaced in the UI:** field-level errors
+  (invalid email, weak password, mismatched confirmation) render inline
+  under each input; account-level errors (duplicate email, wrong password)
+  render as a form-level banner — both using the app's existing `.notice`/
+  warn-color language, no separate error UI.
+
+**How it works (shared by both methods):**
+
+- Server-side only. Google goes through the standard
+  `passport-google-oauth20` strategy (no manual OAuth token exchange, no
+  client secret ever reaches the frontend); email/password goes through
+  `passport-local` as above.
 - Sessions are stored in PostgreSQL (`connect-pg-simple`, `session` table)
   and referenced by an `HttpOnly`, `SameSite=Lax` signed cookie
   (`verilex.sid`). No token or credential is ever placed in `localStorage`;
   the backend — not the client — decides whether a request is authenticated.
-- On first sign-in, `upsertOAuthUser` (`src/services/userService.js`)
-  creates a `users` row from the verified Google profile (id, email, name,
-  profile image, `oauth_provider`/`oauth_provider_user_id`, timestamps).
-  Provider access/refresh tokens are never stored.
+- **Same internal user model for both methods** (`users` table): OAuth
+  sign-in populates `oauth_provider`/`oauth_provider_user_id`; password
+  sign-up populates `password_hash`; either can be added to an existing
+  account of the other kind by matching email (`upsertOAuthUser` /
+  `setPasswordForUser` in `src/services/userService.js`), so a person never
+  ends up with two disconnected accounts for the same email. Passwords are
+  never sent to Google, and Google profile data never touches
+  `password_hash`. Provider access/refresh tokens are never stored either.
 - `GET /api/auth/me` returns the current session's user (or `null`);
-  `GET /api/auth/google?returnTo=/path` starts sign-in and redirects back to
-  `/path` after success (open-redirect protected — only a same-site relative
-  path is honoured); `POST /api/auth/logout` destroys the session.
-- Adding a second provider later means registering another passport
+  `GET /api/auth/google?returnTo=/path` starts Google sign-in and redirects
+  back to `/path` after success (open-redirect protected — only a
+  same-site relative path is honoured); `POST /api/auth/logout` destroys
+  the session for either method identically.
+- Adding a second OAuth provider later means registering another passport
   `Strategy` in `src/auth/passport.js` plus a matching
   `/api/auth/<provider>` route pair in `src/routes/auth.js` — no other code
   changes.

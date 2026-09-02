@@ -1,7 +1,9 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as LocalStrategy } from 'passport-local';
+import bcrypt from 'bcryptjs';
 import { config } from '../config.js';
-import { upsertOAuthUser, getUserById } from '../services/userService.js';
+import { upsertOAuthUser, getUserById, getUserByEmail } from '../services/userService.js';
 
 /**
  * OAuth identity is verified entirely server-side via the established
@@ -10,6 +12,12 @@ import { upsertOAuthUser, getUserById } from '../services/userService.js';
  * it only receives the resulting session cookie. Adding another provider
  * later means registering another passport Strategy here and a matching
  * /api/auth/<provider> route pair; no other code needs to change.
+ *
+ * Email/password is registered as a second, always-available strategy
+ * (passport-local) so authentication never depends solely on Google being
+ * reachable/configured — see routes/auth.js for signup/login handlers.
+ * Credential verification (password hash comparison) happens only here,
+ * server-side; the frontend never validates a password itself.
  */
 export function configurePassport() {
   passport.serializeUser((user, done) => {
@@ -24,6 +32,24 @@ export function configurePassport() {
       done(err);
     }
   });
+
+  passport.use(
+    new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
+      try {
+        const user = await getUserByEmail(email);
+        if (!user || !user.password_hash) {
+          return done(null, false, { message: 'Invalid email or password.' });
+        }
+        const matches = await bcrypt.compare(password, user.password_hash);
+        if (!matches) {
+          return done(null, false, { message: 'Invalid email or password.' });
+        }
+        return done(null, user);
+      } catch (err) {
+        done(err);
+      }
+    })
+  );
 
   if (config.oauth.google.clientId && config.oauth.google.clientSecret) {
     passport.use(
@@ -53,7 +79,8 @@ export function configurePassport() {
     );
   } else {
     console.warn(
-      '[auth] GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are not set — Google sign-in is disabled until configured.'
+      '[auth] GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are not set — Google sign-in is disabled until configured. ' +
+        'Email/password sign-in remains available.'
     );
   }
 

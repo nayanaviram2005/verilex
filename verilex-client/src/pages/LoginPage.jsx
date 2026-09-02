@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, AUTH_STATUS } from '../context/AuthContext.jsx';
 
@@ -14,17 +14,34 @@ function GoogleMark() {
 }
 
 const ERROR_MESSAGES = {
-  oauth_failed: 'Google sign-in did not complete. No account changes were made.',
+  oauth_failed: 'Google sign-in did not complete. No account changes were made. You can try again, or use email and password below.',
 };
 
+function FieldError({ messages }) {
+  if (!messages?.length) return null;
+  return (
+    <div className="mono small" style={{ color: 'var(--warn)', marginTop: 6 }}>
+      {messages[0]}
+    </div>
+  );
+}
+
 export default function LoginPage() {
-  const { status, googleEnabled, signIn } = useAuth();
+  const { status, googleEnabled, signIn, signInWithPassword, signUp } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const returnTo = params.get('returnTo') || '/';
   const errorCode = params.get('error');
   const sessionExpired = status === AUTH_STATUS.SESSION_EXPIRED;
+
+  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     if (status === AUTH_STATUS.AUTHENTICATED) {
@@ -33,12 +50,40 @@ export default function LoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
+  function switchMode(nextMode) {
+    setMode(nextMode);
+    setFormError(null);
+    setFieldErrors({});
+    setPassword('');
+    setConfirmPassword('');
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setFormError(null);
+    setFieldErrors({});
+    setSubmitting(true);
+    try {
+      if (mode === 'signup') {
+        await signUp({ email, password, confirmPassword });
+      } else {
+        await signInWithPassword({ email, password });
+      }
+      navigate(returnTo, { replace: true });
+    } catch (err) {
+      setFieldErrors(err.details?.fieldErrors || {});
+      setFormError(err.details?.fieldErrors ? null : err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div className="stack" style={{ maxWidth: 480, margin: '40px auto' }}>
       <div className="panel">
         <div className="panel-header">
           <span>AUTH.ENTRY_POINT</span>
-          <span className="mono small muted">verilex-session</span>
+          <span className="mono small muted">mode: {mode === 'signup' ? 'CREATE_ACCOUNT' : 'SIGN_IN'}</span>
         </div>
 
         <div className="row" style={{ marginBottom: 18 }}>
@@ -48,14 +93,14 @@ export default function LoginPage() {
         </div>
 
         <p className="muted small" style={{ marginTop: 0 }}>
-          Sign in to save searches, revisit retrieved sources and build a history of the legal
-          material you've reviewed. Anonymous situation search remains available without an
-          account.
+          An account is required to run a search — this keeps a history of the legal material
+          you've reviewed. Google is the fastest way in; email and password remain available if
+          Google is unavailable, blocked, or not your preference.
         </p>
 
-        {(errorCode || sessionExpired) && (
+        {(errorCode || sessionExpired || formError) && (
           <div className="notice" style={{ marginBottom: 16 }}>
-            ERR :: {sessionExpired ? 'Your session expired. Please sign in again.' : ERROR_MESSAGES[errorCode] || 'Authentication failed.'}
+            ERR :: {sessionExpired ? 'Your session expired. Please sign in again.' : formError || ERROR_MESSAGES[errorCode] || 'Authentication failed.'}
           </div>
         )}
 
@@ -70,14 +115,96 @@ export default function LoginPage() {
             Continue with Google
           </button>
         ) : (
-          <div className="notice info">Google sign-in is not configured on this server yet.</div>
+          <div className="notice info">Google sign-in is not configured on this server. Use email and password below.</div>
         )}
+
+        <div className="row" style={{ margin: '18px 0', gap: 12 }}>
+          <div style={{ flex: 1, borderTop: '1px dashed var(--border)' }} />
+          <span className="mono small muted">OR</span>
+          <div style={{ flex: 1, borderTop: '1px dashed var(--border)' }} />
+        </div>
+
+        <form onSubmit={handleSubmit} className="stack" style={{ gap: 14 }}>
+          <div>
+            <label className="field-label" htmlFor="email">// email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <FieldError messages={fieldErrors.email} />
+          </div>
+
+          <div>
+            <label className="field-label" htmlFor="password">// password</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <FieldError messages={fieldErrors.password} />
+            {mode === 'signup' && !fieldErrors.password && (
+              <div className="mono small muted" style={{ marginTop: 6 }}>
+                8+ characters, at least one letter and one number.
+              </div>
+            )}
+          </div>
+
+          {mode === 'signup' && (
+            <div>
+              <label className="field-label" htmlFor="confirmPassword">// confirm password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <FieldError messages={fieldErrors.confirmPassword} />
+            </div>
+          )}
+
+          <button type="submit" className="btn primary" style={{ width: '100%' }} disabled={submitting}>
+            {submitting ? (
+              <span className="loading-bar">{mode === 'signup' ? 'Creating account' : 'Signing in'}</span>
+            ) : mode === 'signup' ? (
+              'Create Account →'
+            ) : (
+              'Sign In →'
+            )}
+          </button>
+        </form>
+
+        <p className="mono small" style={{ textAlign: 'center', marginTop: 16 }}>
+          {mode === 'signup' ? (
+            <>
+              Already have an account?{' '}
+              <button type="button" className="mono small" style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }} onClick={() => switchMode('signin')}>
+                Sign in
+              </button>
+            </>
+          ) : (
+            <>
+              Don't have an account?{' '}
+              <button type="button" className="mono small" style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }} onClick={() => switchMode('signup')}>
+                Create one
+              </button>
+            </>
+          )}
+        </p>
 
         <hr className="rule" />
         <p className="mono small muted" style={{ margin: 0 }}>
           By continuing you agree this tool provides legal information, not legal advice. See the
-          disclaimer in the footer. No password is stored — authentication is handled entirely by
-          Google.
+          disclaimer in the footer. Passwords are hashed server-side and never stored in plain
+          text.
         </p>
       </div>
     </div>

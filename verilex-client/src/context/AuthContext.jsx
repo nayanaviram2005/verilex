@@ -56,9 +56,27 @@ export function AuthProvider({ children }) {
     setStatus(AUTH_STATUS.SESSION_EXPIRED);
   }, []);
 
+  // Email/password fallback — credential verification happens entirely
+  // server-side (see verilex-backend/src/routes/auth.js); this just relays
+  // the request and reflects the resulting session, or lets the caller
+  // catch and display the server's error.
+  const signInWithPassword = useCallback(async ({ email, password }) => {
+    const { user: loggedInUser } = await api.login({ email, password });
+    setUser(loggedInUser);
+    setStatus(AUTH_STATUS.AUTHENTICATED);
+    return loggedInUser;
+  }, []);
+
+  const signUp = useCallback(async ({ email, password, confirmPassword }) => {
+    const { user: newUser } = await api.signup({ email, password, confirmPassword });
+    setUser(newUser);
+    setStatus(AUTH_STATUS.AUTHENTICATED);
+    return newUser;
+  }, []);
+
   const value = useMemo(
-    () => ({ status, user, googleEnabled, signIn, signOut, refresh, markSessionExpired }),
-    [status, user, googleEnabled, signIn, signOut, refresh, markSessionExpired]
+    () => ({ status, user, googleEnabled, signIn, signInWithPassword, signUp, signOut, refresh, markSessionExpired }),
+    [status, user, googleEnabled, signIn, signInWithPassword, signUp, signOut, refresh, markSessionExpired]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
