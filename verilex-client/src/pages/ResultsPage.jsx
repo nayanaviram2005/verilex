@@ -9,13 +9,45 @@ const STATUS_CLASS = { current: 'accent', repealed: 'warn', amended: 'dim', unkn
 function ResultCard({ result }) {
   const navigate = useNavigate();
   const s = result.source;
+  // The API-provided source URL is the only thing that makes this link —
+  // never constructed/guessed. Absent it, the card behaves exactly as before.
+  const hasExternalUrl = Boolean(s.url);
+
   return (
     <div className="panel" style={{ cursor: 'pointer' }} onClick={() => navigate(`/sources/${s.id}`, { state: { searchId: result.search_id, scenarioText: result.scenarioText } })}>
       <div className="spread" style={{ marginBottom: 8 }}>
         <span className="tag dim">#{result.rank} · {result.retrieval_method.toUpperCase()}</span>
-        <span className={`tag ${STATUS_CLASS[s.current_status] || 'dim'}`}>{STATUS_LABEL[s.current_status] || 'UNKNOWN'}</span>
+        <div className="row" style={{ gap: 8 }}>
+          {hasExternalUrl && (
+            <a
+              href={s.url}
+              target="_blank"
+              rel="noreferrer"
+              className="tag accent"
+              onClick={(e) => e.stopPropagation()}
+              title="Open the original source at the provider"
+            >
+              ↗ SOURCE
+            </a>
+          )}
+          <span className={`tag ${STATUS_CLASS[s.current_status] || 'dim'}`}>{STATUS_LABEL[s.current_status] || 'UNKNOWN'}</span>
+        </div>
       </div>
-      <h3 style={{ fontSize: 17, marginBottom: 6 }}>{s.title}</h3>
+      <h3 style={{ fontSize: 17, marginBottom: 6 }}>
+        {hasExternalUrl ? (
+          <a
+            href={s.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{ color: 'inherit' }}
+          >
+            {s.title}
+          </a>
+        ) : (
+          s.title
+        )}
+      </h3>
       <div className="row mono small muted" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
         <span>{s.source_type?.toUpperCase()}</span>
         {s.act && <span>· {s.act}</span>}
