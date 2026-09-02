@@ -25,12 +25,25 @@ export const config = {
     baseUrl: process.env.INDIAN_KANOON_BASE_URL || 'https://api.indiankanoon.org',
   },
 
+  // LLM_PROVIDER=openai|openrouter|template. Kept separate from embeddings
+  // below deliberately: OpenRouter is chat-completion-only (no /embeddings
+  // endpoint), so pointing embeddings at it would silently break the
+  // semantic index. Use LLM_PROVIDER=openrouter for explanations while
+  // EMBEDDING_PROVIDER stays on real OpenAI (or the deterministic fallback).
   llmProvider: process.env.LLM_PROVIDER || 'openai',
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
     model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
     embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
+  },
+  openrouter: {
+    apiKey: process.env.OPENROUTER_API_KEY || '',
+    model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
+    baseUrl: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+    // Optional but recommended by OpenRouter for attribution/rankings.
+    siteUrl: process.env.OPENROUTER_SITE_URL || process.env.CLIENT_ORIGIN || '',
+    appName: process.env.OPENROUTER_APP_NAME || 'VERILEX',
   },
   embeddingProvider: process.env.EMBEDDING_PROVIDER || 'openai',
   embeddingDims: Number(process.env.EMBEDDING_DIMS || 1536),

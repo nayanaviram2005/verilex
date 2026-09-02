@@ -157,9 +157,10 @@ the retrieved sources, open one, and click **Explain Relevance**.
 | `CLIENT_ORIGIN` | Allowed CORS origin for the frontend |
 | `LEGAL_PROVIDER` | `mock` or `indian_kanoon` |
 | `INDIAN_KANOON_API_TOKEN` | Required if `LEGAL_PROVIDER=indian_kanoon` ([api.indiankanoon.org](https://api.indiankanoon.org/)) |
-| `LLM_PROVIDER` | `openai` (falls back to the non-generative `template` provider if no key is set) |
-| `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_BASE_URL` | OpenAI-compatible chat completion config |
-| `EMBEDDING_PROVIDER` | `openai` (falls back to deterministic dev embeddings if no key is set) |
+| `LLM_PROVIDER` | `openai` or `openrouter` (falls back to the non-generative `template` provider if no matching key is set) |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_BASE_URL` | OpenAI-compatible chat completion config, used when `LLM_PROVIDER=openai` |
+| `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` / `OPENROUTER_BASE_URL` / `OPENROUTER_SITE_URL` / `OPENROUTER_APP_NAME` | [OpenRouter](https://openrouter.ai) config, used when `LLM_PROVIDER=openrouter` — **LLM only**, see note below |
+| `EMBEDDING_PROVIDER` | `openai` (falls back to deterministic dev embeddings if no key is set) — always uses `OPENAI_*` above regardless of `LLM_PROVIDER` |
 | `OPENAI_EMBEDDING_MODEL` / `EMBEDDING_DIMS` | Embedding model config |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | API rate limiting |
 | `SESSION_SECRET` | Signs the session cookie — **required**; generate with `openssl rand -base64 48` |
@@ -324,6 +325,17 @@ re-verified against) the authoritative external source, plus
    It is instructed never to claim the law applies or predict an outcome.
 4. If the source has no cached text, the explanation says so rather than
    filling the gap with model knowledge.
+
+**Using OpenRouter instead of OpenAI directly:** set `LLM_PROVIDER=openrouter`
+and `OPENROUTER_API_KEY` (`src/llm/OpenRouterLLMProvider.js` — same
+OpenAI-compatible `/chat/completions` transport as `OpenAILLMProvider`, just
+against `https://openrouter.ai/api/v1`). This affects scenario extraction
+and explanation generation only. **An OpenRouter key is not a drop-in
+OpenAI key for embeddings** — OpenRouter has no `/embeddings` endpoint —
+so `EMBEDDING_PROVIDER`/`OPENAI_API_KEY` for the semantic index stay on a
+real OpenAI key (or the deterministic dev fallback) regardless of
+`LLM_PROVIDER`; that's why the two are separate config blocks rather than
+sharing one API key/base URL.
 
 ## Development phases (per build spec)
 
