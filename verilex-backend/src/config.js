@@ -10,7 +10,14 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
 
-  databaseUrl: process.env.DATABASE_URL || 'postgres://verilex:verilex@localhost:5432/verilex',
+  // Points at a Supabase Postgres connection string by default — see
+  // verilex-backend/.env.example and README > Database (Supabase) for how
+  // to obtain one. No local PostgreSQL install is required to run the app.
+  databaseUrl: process.env.DATABASE_URL || '',
+  // "auto" enables TLS unless the host is localhost/127.0.0.1 (matches
+  // Supabase, which requires SSL, while staying friendly to a local/self-hosted
+  // Postgres for anyone who still prefers one). Force with "true"/"false".
+  databaseSsl: process.env.DATABASE_SSL || 'auto',
 
   legalProvider: process.env.LEGAL_PROVIDER || 'mock',
   indianKanoon: {

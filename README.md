@@ -32,7 +32,7 @@ User can verify the source (original external link always shown)
 
 ```
 verilex/
-├── verilex-backend/   Node.js + Express API, PostgreSQL + pgvector, provider abstractions
+├── verilex-backend/   Node.js + Express API, Supabase PostgreSQL + pgvector, provider abstractions
 └── verilex-client/    React + Vite frontend (neo-brutalist cypherpunk UI)
 ```
 
@@ -62,7 +62,7 @@ Application Services
              ↓
       Legal API Providers  (MockProvider | IndianKanoonProvider | ...)
              ↓
-      PostgreSQL + pgvector (cache / semantic index / provenance)
+      Supabase PostgreSQL + pgvector (cache / semantic index / provenance)
 ```
 
 Every provider implements the same interface
@@ -80,27 +80,38 @@ can be swapped via environment variables without touching business logic.
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL 14+ with the [pgvector](https://github.com/pgvector/pgvector) extension available
-  (Ubuntu/Debian: `sudo apt install postgresql-16-pgvector`, matching your PG version)
+- A [Supabase](https://supabase.com) project (free tier is enough) — **no
+  local PostgreSQL install is required.**
 
-### 1. Database
+### 1. Database (Supabase)
 
-```bash
-sudo -u postgres psql -c "CREATE ROLE verilex LOGIN PASSWORD 'verilex';"
-sudo -u postgres psql -c "CREATE DATABASE verilex OWNER verilex;"
-sudo -u postgres psql -d verilex -c "CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-```
+1. Create a project at [supabase.com](https://supabase.com/dashboard) (or
+   reuse an existing one).
+2. Enable the `vector` extension once: Supabase dashboard → **Database →
+   Extensions** → search "vector" → enable. (If you skip this, it's fine —
+   `npm run migrate` below also runs `CREATE EXTENSION IF NOT EXISTS
+   vector`, which the Supabase `postgres` role is permitted to do.)
+3. Grab your connection string: **Project Settings → Database →
+   Connection string → URI**. Use the direct connection
+   (`db.<project-ref>.supabase.co:5432`) unless your network blocks
+   outbound port 5432, in which case use the session pooler string shown
+   on the same page instead.
+4. Paste it into `DATABASE_URL` in `verilex-backend/.env` (see step 2). TLS
+   to Supabase is handled automatically — nothing else to configure.
 
-(The `vector`/`pgcrypto` extensions typically require a superuser the first
-time; afterwards the app user can create tables freely.)
+That's it — the schema (tables, `session` table for auth, `vector`
+extension) is created by running the migration in the next step, directly
+against your Supabase database. There is nothing to install locally.
 
 ### 2. Backend
 
 ```bash
 cd verilex-backend
-cp .env.example .env    # edit as needed — see Environment variables below
+cp .env.example .env
+# Edit .env: set DATABASE_URL to your Supabase connection string (step 1)
+# and SESSION_SECRET (openssl rand -base64 48) — these two are required.
 npm install
-npm run migrate         # applies src/db/schema.sql
+npm run migrate         # applies src/db/schema.sql to your Supabase database
 npm run dev              # http://localhost:4000
 ```
 
@@ -141,7 +152,8 @@ the retrieved sources, open one, and click **Explain Relevance**.
 | Variable | Purpose |
 |---|---|
 | `PORT` | Backend port (default 4000) |
-| `DATABASE_URL` | PostgreSQL connection string |
+| `DATABASE_URL` | Supabase Postgres connection string — **required**, see Database (Supabase) above |
+| `DATABASE_SSL` | `auto` (default, TLS on for any non-localhost host) / `true` / `false` |
 | `CLIENT_ORIGIN` | Allowed CORS origin for the frontend |
 | `LEGAL_PROVIDER` | `mock` or `indian_kanoon` |
 | `INDIAN_KANOON_API_TOKEN` | Required if `LEGAL_PROVIDER=indian_kanoon` ([api.indiankanoon.org](https://api.indiankanoon.org/)) |
@@ -197,7 +209,7 @@ Two independent ways in, feeding the same user/session model:
                           ↓
                        USER (users table)
                           ↓
-                  SESSION (PostgreSQL-backed)
+                  SESSION (Supabase Postgres-backed)
                           ↓
                      APPLICATION (/app)
 ```
@@ -258,8 +270,10 @@ the single-entry-point approach.
   `passport-google-oauth20` strategy (no manual OAuth token exchange, no
   client secret ever reaches the frontend); email/password goes through
   `passport-local` as above.
-- Sessions are stored in PostgreSQL (`connect-pg-simple`, `session` table)
-  and referenced by an `HttpOnly`, `SameSite=Lax` signed cookie
+- Sessions are stored in your Supabase Postgres database
+  (`connect-pg-simple`, `session` table — the same database everything
+  else uses, no separate session store to run) and referenced by an
+  `HttpOnly`, `SameSite=Lax` signed cookie
   (`verilex.sid`). No token or credential is ever placed in `localStorage`;
   the backend — not the client — decides whether a request is authenticated.
 - **Same internal user model for both methods** (`users` table): OAuth
