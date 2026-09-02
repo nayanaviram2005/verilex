@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { SkeletonSourceView } from '../components/Skeleton.jsx';
 
 export default function SourcePage() {
   const { sourceId } = useParams();
@@ -36,7 +37,7 @@ export default function SourcePage() {
     }
   }
 
-  if (loading) return <div className="loading-bar">Loading source</div>;
+  if (loading) return <SkeletonSourceView />;
   if (error && !data) return <div className="notice">ERR :: {error}</div>;
   if (!data) return null;
 

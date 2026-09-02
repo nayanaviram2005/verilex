@@ -9,7 +9,10 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS vector;
 
 -- ---------------------------------------------------------------------
--- Users (minimal — anonymous search is supported; accounts are optional)
+-- Users (minimal — an account is required to use legal-search
+-- functionality; see requireAuth on the search/source/explain routes).
+-- Authentication is OAuth-only (see "OAuth identity" below); no password
+-- credentials or provider access tokens are stored here.
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,6 +20,34 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Idempotent additions for OAuth identity (safe to re-run on an existing DB).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider_user_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'users_oauth_identity_unique'
+  ) THEN
+    ALTER TABLE users ADD CONSTRAINT users_oauth_identity_unique UNIQUE (oauth_provider, oauth_provider_user_id);
+  END IF;
+END $$;
+
+-- ---------------------------------------------------------------------
+-- Sessions — backing store for express-session (connect-pg-simple).
+-- The backend, not the client, is authoritative for auth state; no
+-- long-lived credential is ever kept in browser storage.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS session (
+  sid VARCHAR NOT NULL COLLATE "default" PRIMARY KEY,
+  sess JSON NOT NULL,
+  expire TIMESTAMP(6) NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire);
 
 -- ---------------------------------------------------------------------
 -- Searches — one per "describe your situation" submission

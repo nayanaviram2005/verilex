@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { SkeletonExplanation } from '../components/Skeleton.jsx';
 
 function Section({ label, children }) {
   return (
@@ -28,7 +29,7 @@ export default function ExplanationPage() {
       .finally(() => setLoading(false));
   }, [explanationId, data]);
 
-  if (loading) return <div className="loading-bar">Generating explanation</div>;
+  if (loading) return <SkeletonExplanation />;
   if (error) return <div className="notice">ERR :: {error}</div>;
   if (!data) return null;
 

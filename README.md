@@ -7,6 +7,12 @@ legal text as grounding. It is **not** a lawyer, an AI legal-advice chatbot, or
 a legal outcome predictor. See [Product Principle](#product-principle) below.
 
 ```
+HOMEPAGE (public — explains the product, no live search)
+            ↓
+SIGN IN / CREATE ACCOUNT (Google OAuth)
+            ↓
+APPLICATION (/app)
+            ↓
 User describes a real-world problem
             ↓
 System understands the situation (scenario extraction)
@@ -121,10 +127,12 @@ npm install
 npm run dev              # http://localhost:5173 (proxies /api to :4000)
 ```
 
-Open http://localhost:5173, describe a situation (try: *"My landlord kept my
-deposit after I moved out and says he won't return it because he claims
-there was damage."*), review the retrieved sources, open one, and click
-**Explain Relevance**.
+Open http://localhost:5173. You'll land on the public homepage; sign in
+(see **Authentication** below — without Google credentials configured, the
+login screen will say so, so set those up first) to reach `/app`, then
+describe a situation (try: *"My landlord kept my deposit after I moved out
+and says he won't return it because he claims there was damage."*), review
+the retrieved sources, open one, and click **Explain Relevance**.
 
 ## Environment variables
 
@@ -142,6 +150,9 @@ there was damage."*), review the retrieved sources, open one, and click
 | `EMBEDDING_PROVIDER` | `openai` (falls back to deterministic dev embeddings if no key is set) |
 | `OPENAI_EMBEDDING_MODEL` / `EMBEDDING_DIMS` | Embedding model config |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | API rate limiting |
+| `SESSION_SECRET` | Signs the session cookie — **required**; generate with `openssl rand -base64 48` |
+| `SESSION_COOKIE_SECURE` / `SESSION_COOKIE_SAMESITE` / `SESSION_MAX_AGE_MS` | Session cookie behaviour (see Authentication below) |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_CALLBACK_URL` | Google OAuth credentials (see Authentication below) |
 
 ### `verilex-client/.env`
 
@@ -160,6 +171,59 @@ the mock provider and normalises Indian Kanoon's response shape into the
 common `NormalizedLegalSource` model — no other code needs to change. To add
 another provider (IndiaCode, Nyaykosh, etc.), implement
 `LegalSourceProvider` and register it in `src/providers/index.js`.
+
+## Authentication (Google OAuth)
+
+An account is required to use the legal-search functionality. `/` is a
+public, static landing page that explains the product and never performs a
+real search or shows fabricated results — it exists purely to route a
+visitor to sign-in. The actual application lives at `/app` (search, results,
+source view, explanations, search history) and is gated both client-side
+(`ProtectedRoute`, redirecting to `/login?returnTo=<destination>`) and
+server-side (`requireAuth` on every `/api/search*`, `/api/sources/*` and
+`/api/explain*` route) — the API rejects unauthenticated requests even if a
+client bypassed the UI guard.
+
+**Setup:**
+
+1. In [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials),
+   create an OAuth 2.0 Client ID (application type: Web application).
+2. Add an Authorized redirect URI matching `GOOGLE_CALLBACK_URL`, e.g.
+   `http://localhost:4000/api/auth/google/callback` for local dev.
+3. In `verilex-backend/.env`, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+   `GOOGLE_CALLBACK_URL`, and a `SESSION_SECRET` (`openssl rand -base64 48`).
+4. Restart the backend. `GET /api/auth/status` and the login screen will now
+   report Google sign-in as enabled.
+
+If these are left unset, the app still runs — the login screen shows
+"Google sign-in is not configured" instead of erroring, and every route that
+doesn't require an account keeps working.
+
+**How it works:**
+
+- Server-side only, via the standard `passport-google-oauth20` strategy —
+  no manual OAuth token exchange, no client secret ever reaches the frontend.
+- Sessions are stored in PostgreSQL (`connect-pg-simple`, `session` table)
+  and referenced by an `HttpOnly`, `SameSite=Lax` signed cookie
+  (`verilex.sid`). No token or credential is ever placed in `localStorage`;
+  the backend — not the client — decides whether a request is authenticated.
+- On first sign-in, `upsertOAuthUser` (`src/services/userService.js`)
+  creates a `users` row from the verified Google profile (id, email, name,
+  profile image, `oauth_provider`/`oauth_provider_user_id`, timestamps).
+  Provider access/refresh tokens are never stored.
+- `GET /api/auth/me` returns the current session's user (or `null`);
+  `GET /api/auth/google?returnTo=/path` starts sign-in and redirects back to
+  `/path` after success (open-redirect protected — only a same-site relative
+  path is honoured); `POST /api/auth/logout` destroys the session.
+- Adding a second provider later means registering another passport
+  `Strategy` in `src/auth/passport.js` plus a matching
+  `/api/auth/<provider>` route pair in `src/routes/auth.js` — no other code
+  changes.
+- `verilex-client/src/context/AuthContext.jsx` exposes
+  `UNAUTHENTICATED | AUTHENTICATING | AUTHENTICATED | AUTH_ERROR | SESSION_EXPIRED`
+  and drives the nav auth controls, the dedicated `/login` screen, and
+  `ProtectedRoute` (redirects to `/login?returnTo=<original path>`, and
+  returns there after sign-in — never just to the homepage).
 
 ## Data model
 
@@ -206,9 +270,10 @@ re-verified against) the authoritative external source, plus
 - Requests are rate-limited (`express-rate-limit`) and validated with `zod`.
 - All SQL is parameterised (`pg` placeholders) — no string-built queries.
 - Retrieved legal text is treated as untrusted input to the LLM (see above).
-- Anonymous search is supported; no personal identifier is required to use
-  the core flow. Scenario text is stored only to support the search/
-  explanation flow itself.
+- An account (Google OAuth) is required to run a search, since the platform
+  keeps a per-account history; only the minimum profile fields are stored
+  (see Authentication above), and scenario text is stored only to support
+  the search/explanation flow itself — never used for model training.
 
 ## Non-goals
 

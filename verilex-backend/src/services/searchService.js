@@ -179,6 +179,20 @@ export async function getSearchResults(searchId) {
   return rows;
 }
 
+export async function listSearchesForUser(userId, limit = 50) {
+  const { rows } = await pool.query(
+    `SELECT s.*, count(sr.id) AS result_count
+     FROM searches s
+     LEFT JOIN search_results sr ON sr.search_id = s.id
+     WHERE s.user_id = $1
+     GROUP BY s.id
+     ORDER BY s.created_at DESC
+     LIMIT $2`,
+    [userId, limit]
+  );
+  return rows;
+}
+
 export async function getSearchById(searchId) {
   const { rows } = await pool.query(`SELECT * FROM searches WHERE id = $1`, [searchId]);
   return rows[0] || null;

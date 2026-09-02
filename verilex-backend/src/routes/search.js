@@ -1,7 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateBody } from '../middleware/validate.js';
-import { runSituationSearch, runSourceSearch, runCaseSearch, getSearchResults, getSearchById, getScenarioForSearch } from '../services/searchService.js';
+import { requireAuth } from '../middleware/requireAuth.js';
+import {
+  runSituationSearch,
+  runSourceSearch,
+  runCaseSearch,
+  getSearchResults,
+  getSearchById,
+  getScenarioForSearch,
+  listSearchesForUser,
+} from '../services/searchService.js';
 
 export const router = Router();
 
@@ -27,11 +36,16 @@ const sourceSearchSchema = z.object({
   filters: filtersSchema,
 });
 
+// The legal-search functionality requires an account (see README ->
+// Authentication) — every route below is gated server-side, not just hidden
+// behind a client-side route guard.
+router.use(requireAuth);
+
 router.post('/search/situation', validateBody(situationSchema), async (req, res, next) => {
   try {
     const { query, state, incidentDate, filters } = req.validatedBody;
     const result = await runSituationSearch({
-      userId: req.userId || null,
+      userId: req.user.id,
       rawQuery: query,
       state,
       incidentDate,
@@ -56,7 +70,7 @@ router.post('/search/situation', validateBody(situationSchema), async (req, res,
 router.post('/search/source', validateBody(sourceSearchSchema), async (req, res, next) => {
   try {
     const { query, filters } = req.validatedBody;
-    const result = await runSourceSearch({ userId: req.userId || null, rawQuery: query, filters });
+    const result = await runSourceSearch({ userId: req.user.id, rawQuery: query, filters });
     res.json(result);
   } catch (err) {
     next(err);
@@ -66,8 +80,17 @@ router.post('/search/source', validateBody(sourceSearchSchema), async (req, res,
 router.post('/search/case', validateBody(sourceSearchSchema), async (req, res, next) => {
   try {
     const { query, filters } = req.validatedBody;
-    const result = await runCaseSearch({ userId: req.userId || null, rawQuery: query, filters });
+    const result = await runCaseSearch({ userId: req.user.id, rawQuery: query, filters });
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/searches', async (req, res, next) => {
+  try {
+    const searches = await listSearchesForUser(req.user.id);
+    res.json({ searches });
   } catch (err) {
     next(err);
   }
@@ -76,7 +99,9 @@ router.post('/search/case', validateBody(sourceSearchSchema), async (req, res, n
 router.get('/search/:id', async (req, res, next) => {
   try {
     const search = await getSearchById(req.params.id);
-    if (!search) return res.status(404).json({ error: 'Search not found.' });
+    if (!search || search.user_id !== req.user.id) {
+      return res.status(404).json({ error: 'Search not found.' });
+    }
     const [scenario, results] = await Promise.all([
       getScenarioForSearch(search.id),
       getSearchResults(search.id),

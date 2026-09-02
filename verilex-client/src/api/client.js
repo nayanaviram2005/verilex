@@ -3,6 +3,7 @@ const BASE = import.meta.env.VITE_API_BASE_URL || '';
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}/api${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...options,
   });
   const data = await res.json().catch(() => ({}));
@@ -38,4 +39,12 @@ export const api = {
     request('/explain', { method: 'POST', body: JSON.stringify({ sourceId, searchId, scenarioText }) }),
 
   getExplanation: (id) => request(`/explain/${id}`),
+
+  authStatus: () => request('/auth/status'),
+  me: () => request('/auth/me'),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+
+  listSearches: () => request('/searches'),
 };
+
+export const BASE_URL = BASE;

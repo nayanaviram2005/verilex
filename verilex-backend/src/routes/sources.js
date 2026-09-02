@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getSourceById, listChunksForSource } from '../services/cacheService.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 import { pool } from '../db/pool.js';
 
 export const router = Router();
 
-router.get('/sources/:id', async (req, res, next) => {
+router.get('/sources/:id', requireAuth, async (req, res, next) => {
   try {
     const source = await getSourceById(req.params.id);
     if (!source) return res.status(404).json({ error: 'Legal source not found in the local index.' });

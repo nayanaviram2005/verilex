@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
+import { SkeletonResultsList } from '../components/Skeleton.jsx';
 
 const STATUS_LABEL = { current: 'CURRENT', repealed: 'REPEALED', amended: 'AMENDED', unknown: 'STATUS UNKNOWN' };
 const STATUS_CLASS = { current: 'accent', repealed: 'warn', amended: 'dim', unknown: 'dim' };
@@ -59,7 +60,7 @@ export default function ResultsPage() {
     });
   }, [data, sourceTypeFilter, statusFilter]);
 
-  if (loading) return <div className="loading-bar">Loading search results</div>;
+  if (loading) return <SkeletonResultsList />;
   if (error) return <div className="notice">ERR :: {error}</div>;
   if (!data) return null;
 

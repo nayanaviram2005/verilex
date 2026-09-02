@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validateBody } from '../middleware/validate.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 import { explainSelectedSource, getExplanation } from '../services/explanationService.js';
 import { pool } from '../db/pool.js';
 
@@ -11,6 +12,8 @@ const explainSchema = z.object({
   searchId: z.string().uuid().optional(),
   scenarioText: z.string().max(4000).optional(),
 });
+
+router.use(requireAuth);
 
 router.post('/explain', validateBody(explainSchema), async (req, res, next) => {
   try {

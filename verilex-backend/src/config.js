@@ -33,6 +33,24 @@ export const config = {
     max: Number(process.env.RATE_LIMIT_MAX || 60),
   },
 
+  session: {
+    secret: process.env.SESSION_SECRET || '',
+    cookieSecure: bool(process.env.SESSION_COOKIE_SECURE, process.env.NODE_ENV === 'production'),
+    // SameSite=lax is fine for same-site dev (Vite proxy) and standard deployments
+    // where the frontend and backend share a site; switch to 'none' (+ Secure)
+    // only if they are deployed on genuinely different origins.
+    sameSite: process.env.SESSION_COOKIE_SAMESITE || 'lax',
+    maxAgeMs: Number(process.env.SESSION_MAX_AGE_MS || 1000 * 60 * 60 * 24 * 30),
+  },
+
+  oauth: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:4000/api/auth/google/callback',
+    },
+  },
+
   isMockProvider() {
     return this.legalProvider === 'mock';
   },
