@@ -67,21 +67,36 @@ function ResultCard({ result }) {
 export default function ResultsPage() {
   const { searchId } = useParams();
   const location = useLocation();
-  const [data, setData] = useState(location.state?.initial || null);
-  const [loading, setLoading] = useState(!location.state?.initial);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sourceTypeFilter, setSourceTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
-    if (data) return;
+    // Re-run for every searchId, not just on first mount: React Router
+    // reuses this component when navigating between two /search/:id URLs
+    // (same route pattern), so state from a previous search must never be
+    // trusted just because it's non-null.
+    const initial = location.state?.initial;
+    setSourceTypeFilter('');
+    setStatusFilter('');
+    if (initial && initial.search?.id === searchId) {
+      setData(initial);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    setData(null);
+    setError(null);
     setLoading(true);
     api
       .getSearch(searchId)
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [searchId, data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchId]);
 
   const filteredResults = useMemo(() => {
     if (!data?.results) return [];

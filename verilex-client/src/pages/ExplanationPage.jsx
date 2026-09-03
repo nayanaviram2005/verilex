@@ -15,19 +15,32 @@ function Section({ label, children }) {
 export default function ExplanationPage() {
   const { explanationId } = useParams();
   const location = useLocation();
-  const [data, setData] = useState(location.state?.initial || null);
-  const [loading, setLoading] = useState(!location.state?.initial);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (data) return;
+    // Re-run for every explanationId, not just on first mount: React
+    // Router reuses this component when navigating between two
+    // /explanations/:id URLs (same route pattern), so state from a
+    // previous explanation must never be trusted just because it's non-null.
+    const initial = location.state?.initial;
+    if (initial && initial.explanation?.id === explanationId) {
+      setData(initial);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    setData(null);
+    setError(null);
     setLoading(true);
     api
       .getExplanation(explanationId)
       .then((res) => setData({ explanation: res.explanation, source: null, relatedJudgments: res.explanation.supporting_cases }))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [explanationId, data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explanationId]);
 
   if (loading) return <SkeletonExplanation />;
   if (error) return <div className="notice">ERR :: {error}</div>;
