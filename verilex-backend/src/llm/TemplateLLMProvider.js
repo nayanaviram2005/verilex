@@ -13,6 +13,9 @@ const CONCEPT_KEYWORDS = {
   intimidation: ['threatened', 'threat', 'intimidated'],
   'service deficiency': ['service', 'refused to', 'denied service'],
   employment: ['employer', 'employee', 'job', 'work', 'office'],
+  'sexual offence': ['sexual assault', 'molested', 'harassed', 'harassment', 'outraging her modesty'],
+  'false accusation': ['falsely accused', 'false allegation', 'false complaint', 'wrongly accused'],
+  defamation: ['defamed', 'defamatory', 'reputation'],
 };
 
 /**

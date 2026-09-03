@@ -27,18 +27,54 @@ function normalize(record) {
   };
 }
 
+// Common filler words are excluded from matching — without this, words
+// like "and", "against", "about", "was" match almost every fixture's
+// boilerplate legal text and let the entire corpus through regardless of
+// actual relevance (e.g. a sexual-assault scenario incorrectly surfacing
+// the Consumer Protection Act purely because both texts contain "and" and
+// "about"). Only substantive, topical words should count as signal.
+const STOPWORDS = new Set([
+  'the', 'and', 'for', 'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had', 'not', 'with',
+  'that', 'this', 'these', 'those', 'from', 'they', 'them', 'their', 'then', 'than', 'also', 'into',
+  'onto', 'upon', 'about', 'against', 'because', 'while', 'when', 'where', 'what', 'which', 'who',
+  'whom', 'whose', 'will', 'shall', 'should', 'would', 'could', 'can', 'may', 'might', 'must', 'you',
+  'your', 'yours', 'me', 'my', 'mine', 'him', 'his', 'her', 'hers', 'its', 'our', 'ours', 'over',
+  'under', 'after', 'before', 'during', 'between', 'out', 'off', 'own', 'same', 'such', 'very',
+  'just', 'more', 'most', 'some', 'any', 'all', 'each', 'other', 'someone', 'something', 'anything',
+  'there', 'here', 'now', 'been', 'being', 'once', 'only', 'worried', 'filed',
+]);
+
+// A word counts as a meaningful match only if it's long enough and not a
+// stopword — this is the signal MockProvider's relevance scoring is built
+// on, so it has to actually mean something topically.
+function isMeaningfulToken(token) {
+  return token.length >= 4 && !STOPWORDS.has(token);
+}
+
 function scoreAgainstQuery(record, queryTokens, filters) {
   const haystack = `${record.title} ${record.fullText} ${(record.concepts || []).join(' ')}`.toLowerCase();
   let score = 0;
+  // Track *distinct* words that hit, not the number of hits — a single
+  // shared word (e.g. "complaint" appearing in both a "criminal complaint"
+  // query and an unrelated "consumer complaint" concept tag) must not
+  // count twice just because it matched via two different checks.
+  const matchedTokens = new Set();
   for (const token of queryTokens) {
-    if (token.length < 3) continue;
-    if (haystack.includes(token)) score += 1;
-    if ((record.concepts || []).some((c) => c.toLowerCase().includes(token))) score += 2;
+    if (!isMeaningfulToken(token)) continue;
+    let tokenScore = 0;
+    if (haystack.includes(token)) tokenScore += 1;
+    if ((record.concepts || []).some((c) => c.toLowerCase().includes(token))) tokenScore += 2;
+    if (tokenScore > 0) {
+      score += tokenScore;
+      matchedTokens.add(token);
+    }
   }
   if (filters?.state && record.state && record.state.toLowerCase() === filters.state.toLowerCase()) score += 3;
   if (filters?.sourceType && record.sourceType === filters.sourceType) score += 1;
   if (filters?.act && record.act && record.act.toLowerCase().includes(filters.act.toLowerCase())) score += 3;
-  return score;
+  // Require at least two distinct meaningful words to overlap — a single
+  // incidental word match isn't enough to call something relevant.
+  return matchedTokens.size >= 2 ? score : 0;
 }
 
 /**

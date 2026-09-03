@@ -153,9 +153,11 @@ export async function runSituationSearch({ userId, rawQuery, state, incidentDate
   const lexicalHits = await lexicalSearch(queryText);
 
   let semanticHits = [];
+  let semanticIsMeaningful = false;
   try {
-    const { vector, model } = await embedQuery(queryText);
+    const { vector, model, isSemanticallyMeaningful } = await embedQuery(queryText);
     semanticHits = await semanticSearch(vector, model);
+    semanticIsMeaningful = isSemanticallyMeaningful;
   } catch (err) {
     console.warn('[search] semantic search unavailable:', err.message);
   }
@@ -196,13 +198,16 @@ export async function runSituationSearch({ userId, rawQuery, state, incidentDate
     }
   }
 
-  // Drop candidates that only surfaced via a weak semantic-only match — this
-  // keeps a crude/deterministic embedding fallback from flooding results
+  // Drop candidates that only surfaced via a semantic-only match — this
+  // keeps a crude/non-meaningful embedding fallback from flooding results
   // with noise; anything also confirmed by the API or lexical search stays.
+  // With a real embedding model, a strong-enough semantic-only match is
+  // still allowed through (semanticIsMeaningful) since it's genuine signal.
   const SEMANTIC_ONLY_MIN_SCORE = 1.5;
   let candidates = [...fused.values()].filter((c) => {
     const onlySemantic = c.methods && c.methods.size === 1 && c.methods.has('semantic');
-    return !onlySemantic || c.score >= SEMANTIC_ONLY_MIN_SCORE;
+    if (!onlySemantic) return true;
+    return semanticIsMeaningful && c.score >= SEMANTIC_ONLY_MIN_SCORE;
   });
 
   // apply user-supplied filters as a hard narrow, never inventing values

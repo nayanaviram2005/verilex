@@ -34,7 +34,11 @@ export async function ensureEmbeddingsForSource(sourceId) {
 export async function embedQuery(text) {
   const provider = getActiveEmbeddingProvider();
   const vector = await provider.embed(text);
-  return { vector, model: provider.model };
+  // Callers use this to decide how much to trust a semantic-only match:
+  // the deterministic fallback is a hash of tokens, not a real embedding —
+  // its "similarity" scores are not semantically meaningful and should
+  // never be sufficient on their own to call a result relevant.
+  return { vector, model: provider.model, isSemanticallyMeaningful: provider.name !== 'deterministic-dev-fallback' };
 }
 
 /**
