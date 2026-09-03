@@ -60,7 +60,7 @@ Application Services
     ├── Explanation              (grounded LLM/template explanation)
     └── Provider Management      (legal API / LLM / embedding provider registries)
              ↓
-      Legal API Providers  (MockProvider | IndianKanoonProvider | ...)
+      Legal API Providers  (MockProvider | IndianKanoonProvider) + InsightLawProvider, always fused
              ↓
       Supabase PostgreSQL + pgvector (cache / semantic index / provenance)
 ```
@@ -121,13 +121,20 @@ the app runs fully end-to-end out of the box using:
   covering real Indian statutes/provisions (BNS, IT Act, Payment of Wages Act,
   Industrial Disputes Act, Transfer of Property Act, Model Tenancy Act,
   Consumer Protection Act) and a few illustrative judgments,
+- **InsightLaw**, a real, free, keyless legal API (Constitution/IPC/BNS/Kerala
+  Acts) queried alongside it by default — see
+  [Legal source providers](#legal-source-providers--multiple-queried-together)
+  below,
 - a non-generative **TemplateLLMProvider** that produces extractive,
   hallucination-free explanations directly from the retrieved text,
 - a deterministic **DeterministicEmbeddingProvider** dev fallback for the
   pgvector pipeline.
 
-This mock data is never mixed with real provider data — the active provider
-is a single, explicit selection (`LEGAL_PROVIDER`).
+Mock results are never *disguised* as real ones — every result carries its
+own `provider` field (`mock`, `indian_kanoon`, or `insightlaw`), shown in
+the UI, so mock and real results are always distinguishable even when
+returned side by side. Set `INSIGHTLAW_ENABLED=false` if you want a
+mock-only run with nothing real in the mix.
 
 ### 3. Frontend
 
@@ -155,8 +162,9 @@ the retrieved sources, open one, and click **Explain Relevance**.
 | `DATABASE_URL` | Supabase Postgres connection string — **required**, see Database (Supabase) above |
 | `DATABASE_SSL` | `auto` (default, TLS on for any non-localhost host) / `true` / `false` |
 | `CLIENT_ORIGIN` | Allowed CORS origin for the frontend |
-| `LEGAL_PROVIDER` | `mock` or `indian_kanoon` |
+| `LEGAL_PROVIDER` | Primary provider: `mock` or `indian_kanoon` — InsightLaw (below) is queried in addition to this, not instead |
 | `INDIAN_KANOON_API_TOKEN` | Required if `LEGAL_PROVIDER=indian_kanoon` ([api.indiankanoon.org](https://api.indiankanoon.org/)) |
+| `INSIGHTLAW_ENABLED` / `INSIGHTLAW_BASE_URL` / `INSIGHTLAW_TIMEOUT_MS` | [InsightLaw](https://insightlaw.in) — free, keyless; enabled by default, no signup needed |
 | `LLM_PROVIDER` | `openai` or `openrouter` (falls back to the non-generative `template` provider if no matching key is set) |
 | `OPENAI_API_KEY` / `OPENAI_MODEL` / `OPENAI_BASE_URL` | OpenAI-compatible chat completion config, used when `LLM_PROVIDER=openai` |
 | `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` / `OPENROUTER_BASE_URL` / `OPENROUTER_SITE_URL` / `OPENROUTER_APP_NAME` | [OpenRouter](https://openrouter.ai) config, used when `LLM_PROVIDER=openrouter` — **LLM only**, see note below |
@@ -175,15 +183,72 @@ the retrieved sources, open one, and click **Explain Relevance**.
 
 See each `.env.example` for full detail.
 
-## Connecting a real legal API provider
+## Legal source providers — multiple, queried together
 
-Set `LEGAL_PROVIDER=indian_kanoon` and `INDIAN_KANOON_API_TOKEN` in
-`verilex-backend/.env`. `IndianKanoonProvider`
-(`src/providers/IndianKanoonProvider.js`) implements the same interface as
-the mock provider and normalises Indian Kanoon's response shape into the
-common `NormalizedLegalSource` model — no other code needs to change. To add
-another provider (IndiaCode, Nyaykosh, etc.), implement
-`LegalSourceProvider` and register it in `src/providers/index.js`.
+The app is never limited to one legal source. `providers/index.js` exposes
+two functions:
+
+- `getActiveProvider()` — the single **primary** provider selected via
+  `LEGAL_PROVIDER` (`mock` or `indian_kanoon`).
+- `getActiveProviders()` — the primary provider **plus InsightLaw**
+  (unless `INSIGHTLAW_ENABLED=false`), the array `searchService.js`
+  actually queries for every search.
+
+```
+User Scenario
+    ↓
+Legal Search Service
+    ├── Primary provider (mock | Indian Kanoon)
+    └── InsightLaw (free, keyless — Constitution / IPC / BNS 2023 / Kerala Acts)
+    ↓
+Normalise (both → the same NormalizedLegalSource shape)
+    ↓
+Cache every result (each keeps its own provider + provider_source_id — full
+provenance for both, even after the next step merges them for display)
+    ↓
+Deduplicate (same Act+Section from two providers → one merged result,
+reason text names both; scored higher for the cross-provider agreement)
+    ↓
+Rank / fuse (with lexical + semantic search, as before)
+    ↓
+Unified Results
+```
+
+**Provider isolation:** `runProviderSearch` in `searchService.js` calls
+every active provider with `Promise.allSettled` — one provider timing out,
+erroring, or being unreachable never fails the whole search; the others'
+results are used regardless. (InsightLaw calls also carry their own
+6s-default timeout — `INSIGHTLAW_TIMEOUT_MS` — via `AbortController`, so a
+slow/unreachable InsightLaw can't stall a search either.)
+
+**Indian Kanoon:** set `LEGAL_PROVIDER=indian_kanoon` and
+`INDIAN_KANOON_API_TOKEN`. `IndianKanoonProvider`
+(`src/providers/IndianKanoonProvider.js`) normalises Indian Kanoon's
+response shape into the common `NormalizedLegalSource` model.
+
+**InsightLaw** (`src/providers/InsightLawProvider.js`) needs no key and is
+enabled by default — every result is tagged `provider: "insightlaw"`, so
+it's never confused with the primary provider's results even before
+dedup/merge. It covers the Constitution of India, IPC, BNS 2023 and a set
+of Kerala Acts (English/Hindi/Malayalam), via `GET /api/search?q=` for
+discovery and per-corpus endpoints (`/api/constitution/article/{n}`,
+`/api/ipc/section/{n}`, `/api/bns/section/{n}`, `/api/kerala/{act}/section/{n}`)
+for direct lookups. **Caveat:** this was implemented against InsightLaw's
+published endpoint list (confirmed reliable), but this environment's
+network egress is blocked for `insightlaw.in`, so the exact response
+field names could not be verified against the live OpenAPI spec
+(`https://insightlaw.in/openapi.json`, OAS 3.1, v2.1.0) while building
+it — the normaliser therefore does tolerant, multi-key field lookups (see
+the comment at the top of `InsightLawProvider.js`) and never fabricates a
+`url` (only ever set from a field actually present in the response). If a
+live response uses different field names than expected, only the
+`_pick(...)` key lists in that file need adjusting.
+
+To add another provider (IndiaCode, Nyaykosh, etc.), implement
+`LegalSourceProvider` and register it in `src/providers/index.js`'s
+`build()` switch — then decide whether it belongs in `getActiveProviders()`
+(always-on, like InsightLaw) or only as an explicit `LEGAL_PROVIDER`
+choice (like Indian Kanoon).
 
 ## Authentication (Google OAuth + email/password)
 

@@ -19,10 +19,22 @@ export const config = {
   // Postgres for anyone who still prefers one). Force with "true"/"false".
   databaseSsl: process.env.DATABASE_SSL || 'auto',
 
+  // Primary legal source provider (mock | indian_kanoon). InsightLaw below
+  // is queried ALONGSIDE this one, not instead of it — see
+  // providers/index.js getActiveProviders() and services/searchService.js.
   legalProvider: process.env.LEGAL_PROVIDER || 'mock',
   indianKanoon: {
     apiToken: process.env.INDIAN_KANOON_API_TOKEN || '',
     baseUrl: process.env.INDIAN_KANOON_BASE_URL || 'https://api.indiankanoon.org',
+  },
+  // InsightLaw (https://insightlaw.in) — free, keyless Indian legal API
+  // (Constitution/IPC/BNS/Kerala Acts). Enabled by default since it needs
+  // no credentials; every result it returns is tagged provider:"insightlaw"
+  // so it's never confused with the primary provider's results.
+  insightLaw: {
+    enabled: bool(process.env.INSIGHTLAW_ENABLED, true),
+    baseUrl: process.env.INSIGHTLAW_BASE_URL || 'https://insightlaw.in',
+    timeoutMs: Number(process.env.INSIGHTLAW_TIMEOUT_MS || 6000),
   },
 
   // LLM_PROVIDER=openai|openrouter|template. Kept separate from embeddings
