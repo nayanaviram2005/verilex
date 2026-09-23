@@ -1,8 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, AUTH_STATUS } from '../context/AuthContext.jsx';
 
 const EXAMPLE_AREAS = ['Tenancy', 'Employment', 'Online Fraud', 'Consumer Disputes'];
+
+const DEMO_STEPS = [
+  'Reading your description…',
+  'Extracting legal concepts…',
+  'Searching connected legal sources…',
+  'Ranking relevant provisions…',
+];
+
+const DEMO_TEASER_ROWS = [
+  { w: '78%' },
+  { w: '64%' },
+  { w: '71%' },
+];
 
 const PIPELINE_STEPS = [
   { id: '01', label: 'Describe', detail: 'You describe what happened, in your own words.', icon: '💬' },
@@ -24,11 +37,41 @@ export default function LandingPage() {
   const { status } = useAuth();
   const navigate = useNavigate();
 
+  // "Try it now" teaser on the landing page. This does NOT run a real
+  // search — nothing here calls the API or touches real legal data. It
+  // exists purely to demonstrate the product flow (analyzing → results
+  // found) before gating the actual results behind sign-in, mirroring the
+  // "start typing, then get walled" pattern common on marketing sites.
+  const [demoText, setDemoText] = useState('');
+  const [demoStep, setDemoStep] = useState(-1); // -1 idle, 0..N-1 analyzing, N done
+  const demoTimer = useRef(null);
+
   useEffect(() => {
     if (status === AUTH_STATUS.AUTHENTICATED) {
       navigate('/app', { replace: true });
     }
   }, [status, navigate]);
+
+  useEffect(() => () => clearInterval(demoTimer.current), []);
+
+  function runDemo() {
+    if (!demoText.trim() || demoStep >= 0) return;
+    setDemoStep(0);
+    let i = 0;
+    demoTimer.current = setInterval(() => {
+      i += 1;
+      if (i >= DEMO_STEPS.length) {
+        clearInterval(demoTimer.current);
+        setDemoStep(DEMO_STEPS.length);
+      } else {
+        setDemoStep(i);
+      }
+    }, 620);
+  }
+
+  const demoIdle = demoStep === -1;
+  const demoAnalyzing = demoStep >= 0 && demoStep < DEMO_STEPS.length;
+  const demoDone = demoStep === DEMO_STEPS.length;
 
   return (
     <div className="stack" style={{ gap: 88 }}>
@@ -86,6 +129,96 @@ export default function LandingPage() {
             <span className="mockup-node" />
             <span className="mockup-node-line" />
           </div>
+        </div>
+      </section>
+
+      {/* ---------------- TRY IT NOW — teaser demo, gated at sign-in ---------------- */}
+      <section>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <span className="eyebrow">Try it now</span>
+          <h2 style={{ fontSize: 30 }}>See it work on your own situation</h2>
+        </div>
+
+        <div className="panel" style={{ maxWidth: 720, margin: '0 auto' }}>
+          {demoIdle && (
+            <>
+              <label className="field-label" htmlFor="demo-scenario">
+                Describe what happened
+              </label>
+              <textarea
+                id="demo-scenario"
+                rows={3}
+                placeholder="e.g. My landlord is refusing to return my security deposit after I moved out…"
+                value={demoText}
+                onChange={(e) => setDemoText(e.target.value)}
+              />
+              <div className="row" style={{ justifyContent: 'flex-end', marginTop: 14 }}>
+                <button type="button" className="btn primary" onClick={runDemo} disabled={!demoText.trim()}>
+                  Analyze my situation
+                </button>
+              </div>
+            </>
+          )}
+
+          {demoAnalyzing && (
+            <div className="stack" style={{ gap: 14 }}>
+              <div className="row spread">
+                <span className="loading-bar">Analyzing</span>
+                <span className="tag accent">{demoStep + 1} / {DEMO_STEPS.length}</span>
+              </div>
+              <p className="mono small muted" style={{ margin: 0 }}>{DEMO_STEPS[demoStep]}</p>
+              <div className="skel-block skel-line w-100" />
+              <div className="skel-block skel-line w-90" />
+              <div className="skel-block skel-line w-70" />
+            </div>
+          )}
+
+          {demoDone && (
+            <div className="stack" style={{ gap: 16 }}>
+              <div className="row spread">
+                <span className="tag accent">3 relevant sources found</span>
+                <span className="tag dim">Preview</span>
+              </div>
+
+              <div className="stack" style={{ gap: 12, position: 'relative' }}>
+                {DEMO_TEASER_ROWS.map((row, idx) => (
+                  <div
+                    key={idx}
+                    className="skel-panel"
+                    style={{ padding: 16, filter: 'blur(5px)', userSelect: 'none' }}
+                    aria-hidden="true"
+                  >
+                    <div className="skel-block skel-line w-30" style={{ marginBottom: 10 }} />
+                    <div className="skel-block skel-line" style={{ width: row.w }} />
+                  </div>
+                ))}
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    textAlign: 'center',
+                  }}
+                >
+                  <p className="mono small" style={{ margin: 0, fontWeight: 700 }}>
+                    Sign in to view these results
+                  </p>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => navigate('/login?returnTo=%2Fapp')}
+                  >
+                    Unlock full results
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
