@@ -712,33 +712,22 @@ hr.rule {
 }
 
 /* =========================================================================
-   SKELETON LOADING — transparent-text technique.
-   Skeletons are built from the SAME markup as the real content (same tag,
-   same class, often the same or representative static text) rather than
-   synthetic grey bars at guessed widths. Text becomes transparent with a
-   shimmer gradient clipped to its own glyphs via background-clip: text, so
-   dimensions are pixel-perfect by construction — the skeleton IS the real
-   element, just not yet readable. Non-text placeholders (icons, swatches)
-   use .skel-block, a plain shimmering fill. Colors are derived from the
-   existing --border/--bg-card tokens, not hardcoded greys, so the skeleton
-   stays correct if the palette ever changes. prefers-reduced-motion swaps
-   the sweep for a static muted fill.
+   SKELETON LOADING — placeholder blocks, not real text.
+   A skeleton stands in for content that hasn't arrived yet (including
+   when it may never arrive quickly, e.g. a slow connection) — so it
+   never renders actual or representative copy, just shapes: bars sized
+   to mirror the real layout (title bar, meta-fragment bars, paragraph
+   lines of varying width, tag pills) in the exact positions the real
+   content will occupy, so there's zero layout shift on load. Every
+   shape shimmers with the same slow gradient sweep for visual interest.
+   Colors are derived from the existing --border/--bg-card tokens, not a
+   hardcoded grey, so the skeleton stays correct if the palette ever
+   changes. prefers-reduced-motion swaps the sweep for a static fill.
    ========================================================================= */
 
 @keyframes skel-shimmer {
   from { background-position: 160% 0; }
   to { background-position: -60% 0; }
-}
-
-.skel-text {
-  background-image: linear-gradient(100deg, var(--border) 35%, var(--bg-card) 50%, var(--border) 65%);
-  background-size: 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: skel-shimmer 1.8s linear infinite;
-  user-select: none;
-  display: inline-block;
 }
 
 .skel-block {
@@ -750,24 +739,36 @@ hr.rule {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.65) 50%, transparent 65%);
+  background-image: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.75) 50%, transparent 65%);
   background-size: 250% 100%;
   animation: skel-shimmer 1.8s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skel-text {
-    background-image: none;
-    -webkit-background-clip: initial;
-    background-clip: initial;
-    color: transparent;
-    background-color: var(--border);
-    animation: none;
-  }
   .skel-block::after {
     animation: none;
     display: none;
   }
+}
+
+.skel-line {
+  height: 11px;
+}
+.skel-line.w-100 { width: 100%; }
+.skel-line.w-90 { width: 90%; }
+.skel-line.w-70 { width: 70%; }
+.skel-line.w-60 { width: 60%; }
+.skel-line.w-50 { width: 50%; }
+.skel-line.w-30 { width: 30%; }
+
+.skel-title {
+  height: 22px;
+  width: 65%;
+}
+
+.skel-tag {
+  height: 20px;
+  width: 84px;
 }
 
 .skel-fade-in {

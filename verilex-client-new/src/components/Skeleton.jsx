@@ -1,71 +1,65 @@
 /**
- * Skeleton loading, built on the "transparent text" technique: each
- * skeleton reuses the real page's own markup — same element, same
- * className, often the same static label text — with the text made
- * transparent and a shimmer gradient clipped to its own glyphs
- * (background-clip: text). Because it's the real element rendered with
- * real or representative text, its dimensions are exactly the real
- * content's dimensions by construction; nothing here is a hand-guessed
- * percentage-width bar. Non-text placeholders (icon swatches) use
- * .skel-block, a plain shimmering fill. See global.css for the shimmer
- * animation, the prefers-reduced-motion fallback, and .skel-fade-in,
- * used by useDelayedLoading's consumers to crossfade in.
+ * Skeleton loading: placeholder shapes, not placeholder text. A skeleton
+ * stands in for content that hasn't arrived — including when it may be
+ * a while, e.g. a slow connection — so it never renders real or
+ * representative copy, only shimmering bars sized and positioned to
+ * mirror the real layout (title bar, meta fragments, paragraph lines of
+ * varying width, tag pills) exactly, so there's zero layout shift once
+ * real data lands. See global.css for the shimmer sweep, the
+ * prefers-reduced-motion fallback, and .skel-fade-in (the crossfade used
+ * once the skeleton is swapped for real content).
  */
 
-function T({ as: Tag = 'span', children, className = '', style }) {
-  return (
-    <Tag className={`skel-text ${className}`} style={style} aria-hidden="true">
-      {children}
-    </Tag>
-  );
+function Line({ width = '100', style }) {
+  return <div className={`skel-block skel-line w-${width}`} style={style} aria-hidden="true" />;
 }
 
-function Block({ width, height, style }) {
-  return <div className="skel-block" style={{ width, height, ...style }} aria-hidden="true" />;
+function Title({ width, style }) {
+  return <div className="skel-block skel-title" style={{ width, ...style }} aria-hidden="true" />;
 }
 
-export function SkeletonPanelHeader({ left = 'Loading', right = '···' }) {
+function Tag({ width }) {
+  return <div className="skel-block skel-tag" style={{ width }} aria-hidden="true" />;
+}
+
+export function SkeletonPanelHeader() {
   return (
     <div className="skel-panel-header">
-      <T>{left}</T>
-      <T className="mono small muted">{right}</T>
+      <Line width="30" style={{ height: 10, marginBottom: 0 }} />
+      <Line width="15" style={{ height: 10, marginBottom: 0 }} />
     </div>
   );
 }
 
 /**
- * Mirrors ResultCard exactly: same .panel/.tag/.notice structure, same
- * h3 title element, same meta-row shape — filled with representative
- * text of plausible length rather than the (unknown, still loading)
- * real values.
+ * Mirrors ResultCard's shape: rank/method tag + two action tags, a title
+ * bar, a row of short meta fragments, two body lines, and a bordered
+ * "why retrieved" box — all placeholder shapes at the real positions.
  */
 export function SkeletonResultCard() {
   return (
     <div className="panel" aria-hidden="true">
-      <div className="spread" style={{ marginBottom: 8 }}>
-        <span className="tag dim"><T>#1 · FUSED</T></span>
+      <div className="spread" style={{ marginBottom: 12 }}>
+        <Tag width={90} />
         <div className="row" style={{ gap: 8 }}>
-          <span className="tag accent"><T>View Source</T></span>
-          <span className="tag dim"><T>Current</T></span>
+          <Tag width={80} />
+          <Tag width={66} />
         </div>
       </div>
-      <h3 style={{ fontSize: 17, marginBottom: 6 }}>
-        <T>Model Tenancy Act, 2021 — Section 10: Security deposit</T>
-      </h3>
-      <div className="row mono small muted" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-        <T>SECTION</T>
-        <T>· Model Tenancy Act, 2021</T>
-        <T>· §10</T>
-        <T>· India (Central)</T>
+      <Title width="70%" style={{ marginBottom: 12 }} />
+      <div className="row" style={{ gap: 10, marginBottom: 14 }}>
+        <Line width="30" style={{ height: 9, marginBottom: 0 }} />
+        <Line width="30" style={{ height: 9, marginBottom: 0 }} />
+        <Line width="30" style={{ height: 9, marginBottom: 0 }} />
       </div>
-      <p className="muted small" style={{ margin: '0 0 10px' }}>
-        <T as="span" style={{ display: 'block' }}>
-          The relevant provision text will appear here once the source has been retrieved and
-          cached from its provider, in full…
-        </T>
-      </p>
-      <div className="notice info small" style={{ padding: '8px 10px' }}>
-        <T>Why This Was Retrieved: this source overlaps with concepts identified in your description.</T>
+      <div className="stack" style={{ gap: 7, marginBottom: 14 }}>
+        <Line width="100" />
+        <Line width="90" />
+        <Line width="60" />
+      </div>
+      <div style={{ border: '1px solid var(--border)', padding: '10px 12px' }}>
+        <Line width="90" style={{ marginBottom: 6 }} />
+        <Line width="50" />
       </div>
     </div>
   );
@@ -81,14 +75,13 @@ export function SkeletonResultsList({ count = 4, showScenario = true }) {
     <div className="stack skel-fade-in" role="status" aria-label="Loading results">
       {showScenario && (
         <div className="panel" aria-hidden="true">
-          <SkeletonPanelHeader left="Scenario Reference: ········" right="· result(s)" />
-          <p style={{ marginTop: 0 }}>
-            <T>"Your described situation will appear here once the search completes."</T>
-          </p>
-          <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
-            <T className="mono small muted">Detected Concepts:</T>
-            <span className="tag accent"><T>concept</T></span>
-            <span className="tag accent"><T>concept</T></span>
+          <SkeletonPanelHeader />
+          <Line width="90" style={{ marginBottom: 8 }} />
+          <Line width="60" style={{ marginBottom: 14 }} />
+          <div className="row" style={{ gap: 8 }}>
+            <Tag width={100} />
+            <Tag width={84} />
+            <Tag width={76} />
           </div>
         </div>
       )}
@@ -100,86 +93,73 @@ export function SkeletonResultsList({ count = 4, showScenario = true }) {
 }
 
 /**
- * Mirrors SourcePage: panel header, star/status tags, title, meta row,
- * the three-cell date grid, the source-text divider and paragraph, and
- * the provenance box — in the same positions the real page renders them.
+ * Mirrors SourcePage: panel header, star/status tags, a title bar, a
+ * meta line, a three-cell date grid, a divider, several paragraph lines
+ * of source text, and a bordered provenance box.
  */
 export function SkeletonSourceView() {
   return (
     <div className="skel-panel skel-fade-in" role="status" aria-label="Loading legal source">
       <div className="skel-panel-header">
-        <T>Legal Source</T>
+        <Line width="30" style={{ height: 10, marginBottom: 0 }} />
         <div className="row" style={{ gap: 8 }}>
-          <span className="tag dim"><T>☆ Star This Source</T></span>
-          <span className="tag dim"><T>Current</T></span>
+          <Tag width={120} />
+          <Tag width={70} />
         </div>
       </div>
-      <h2 style={{ fontSize: 22, marginBottom: 10 }}>
-        <T>Model Tenancy Act, 2021 — Section 10: Security deposit</T>
-      </h2>
-      <div className="row mono small muted" style={{ flexWrap: 'wrap', gap: 10, marginBottom: 16 }}>
-        <T>SECTION</T>
-        <T>· Act: Model Tenancy Act, 2021</T>
-        <T>· §10</T>
+      <Title width="78%" style={{ height: 26, marginBottom: 14 }} />
+      <div className="row" style={{ gap: 12, marginBottom: 18 }}>
+        <Line width="15" style={{ height: 9, marginBottom: 0 }} />
+        <Line width="30" style={{ height: 9, marginBottom: 0 }} />
+        <Line width="10" style={{ height: 9, marginBottom: 0 }} />
       </div>
-      <div className="grid-3 mono small muted" style={{ marginBottom: 16 }}>
-        <T>Date: ····-··-··</T>
-        <T>Effective: ····-··-··</T>
-        <T>Repealed: n/a</T>
+      <div className="grid-3" style={{ marginBottom: 20 }}>
+        <Line width="70" style={{ height: 9, marginBottom: 0 }} />
+        <Line width="70" style={{ height: 9, marginBottom: 0 }} />
+        <Line width="70" style={{ height: 9, marginBottom: 0 }} />
       </div>
-      <div className="divider-label" style={{ opacity: 0.7 }}>source text</div>
-      <p>
-        <T as="span" style={{ display: 'block' }}>
-          The full retrieved text of this provision will be shown here once it has finished
-          loading from the cache, exactly as cached from the provider, with no summarisation.
-        </T>
-      </p>
-      <div className="callout-authority" style={{ marginTop: 10 }}>
-        <T as="span" style={{ display: 'block' }}>
-          Provenance — Provider: ·· · Provider ID: ········ · Retrieved: ·· · Last Verified: ··
-        </T>
+      <div style={{ width: 22, height: 2, background: 'var(--accent)', marginBottom: 16 }} aria-hidden="true" />
+      <div className="stack" style={{ gap: 8, marginBottom: 18 }}>
+        <Line width="100" />
+        <Line width="100" />
+        <Line width="90" />
+        <Line width="70" />
+        <Line width="50" />
+      </div>
+      <div style={{ border: '1px solid var(--border)', padding: '12px 14px' }}>
+        <Line width="90" style={{ marginBottom: 6 }} />
+        <Line width="60" />
       </div>
     </div>
   );
 }
 
 /**
- * Mirrors ExplanationPage: scenario callout, panel header, notice box,
- * then one divider-shaped label + two body lines per real section.
+ * Mirrors ExplanationPage: the scenario callout bar, panel header,
+ * notice box, then — for each real explanation section — a divider
+ * mark followed by two body lines.
  */
 export function SkeletonExplanation() {
-  const sections = [
-    'what the law says',
-    'what in your scenario relates to it',
-    'where the relationship is strong',
-    'what is uncertain',
-    'exceptions / limitations',
-  ];
+  const sections = ['what the law says', 'what in your scenario relates to it', 'where the relationship is strong', 'what is uncertain', 'exceptions / limitations'];
   return (
     <div className="stack skel-fade-in" role="status" aria-label="Generating explanation">
-      <div className="callout-authority">
-        <T as="span" style={{ display: 'block' }}>Scenario on File — "your description will appear here"</T>
+      <div className="skel-panel" style={{ padding: 16 }}>
+        <Line width="80" style={{ marginBottom: 0 }} />
       </div>
       <div className="skel-panel">
-        <div className="skel-panel-header">
-          <T>Explanation — Model: ········</T>
-          <T className="mono small muted">Source title</T>
-        </div>
-        <div className="notice info small" style={{ marginBottom: 20 }}>
-          <T as="span" style={{ display: 'block' }}>
-            This is an AI/rule-based interpretation of the retrieved source below, grounded only
-            in its cached text.
-          </T>
+        <SkeletonPanelHeader />
+        <div style={{ border: '1px solid var(--border)', padding: '12px 14px', marginBottom: 20 }}>
+          <Line width="100" style={{ marginBottom: 6 }} />
+          <Line width="80" />
         </div>
         {sections.map((s) => (
           <div key={s} style={{ marginBottom: 20 }}>
-            <div className="divider-label" style={{ opacity: 0.7 }}>{s}</div>
-            <p style={{ margin: 0 }}>
-              <T as="span" style={{ display: 'block' }}>
-                This section will explain how the retrieved source relates to your described
-                situation, grounded strictly in its cached text.
-              </T>
-            </p>
+            <div className="row" style={{ gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 18, height: 2, background: 'var(--accent)' }} aria-hidden="true" />
+              <Line width="30" style={{ height: 9, marginBottom: 0 }} />
+            </div>
+            <Line width="100" style={{ marginBottom: 6 }} />
+            <Line width="70" />
           </div>
         ))}
       </div>
@@ -187,4 +167,4 @@ export function SkeletonExplanation() {
   );
 }
 
-export { T as SkeletonText, Block as SkeletonBlock };
+export { Line as SkeletonLine, Title as SkeletonTitle, Tag as SkeletonTag };
