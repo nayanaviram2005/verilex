@@ -16,11 +16,18 @@ const CONCEPT_KEYWORDS = {
   // "paid"/"payment" alone are far too generic (paid taxes, paid rent,
   // paid a fine) — kept to words/phrases specific to a wage dispute.
   'unpaid wages': ['salary', 'wage', 'wages', 'unpaid salary', 'havent been paid', "haven't been paid", 'hasnt paid me', "hasn't paid me", 'not paid me'],
-  termination: ['terminated', 'fired', 'dismissed', 'not come back', 'let go', 'sacked'],
+  // "let go" alone is dangerously ambiguous: "would not let go of me" (a
+  // physical-assault scenario) is not "let me go" (the HR euphemism for
+  // firing someone) — anchored to the reflexive-pronoun HR phrasing.
+  termination: ['terminated', 'fired', 'dismissed', 'not come back', 'let me go', 'let him go', 'let her go', 'letting me go', 'was let go', 'sacked'],
   'security deposit': ['deposit'],
   tenancy: ['landlord', 'tenant', 'rent', 'lease', 'moved out', 'vacated'],
   'property damage': ['damage', 'damaged'],
-  cheating: ['tricked', 'deceived', 'fraud', 'cheated', 'scam', 'scammed'],
+  cheating: [
+    'tricked', 'deceived', 'fraud', 'cheated', 'scam', 'scammed', 'turned out to be stolen',
+    'falsely claimed', 'claimed to own', 'claimed he owned', 'claimed she owned', 'disappeared with my money',
+    'sold me a stolen', 'misrepresented',
+  ],
   'dishonest inducement': ['tricked', 'induced', 'convinced me to'],
   'money transfer fraud': ['transferred money', 'sent money', 'bank transfer', 'upi'],
   impersonation: ['pretending to be', 'pretended to be', 'claiming to be from', 'posing as', 'impersonating', 'impersonated'],
@@ -32,7 +39,11 @@ const CONCEPT_KEYWORDS = {
   'online fraud': ['phishing', 'fake website', 'otp fraud', 'online scam', 'fraudulent website', 'fake customer care'],
   // Matched as whole words, so inflections need listing explicitly —
   // "threatening" is not matched by a "threat"/"threatened" entry alone.
-  intimidation: ['threatened', 'threatening', 'threatens', 'threat', 'threats', 'intimidated', 'intimidating'],
+  intimidation: [
+    'threatened', 'threatening', 'threatens', 'threat', 'threats', 'intimidated', 'intimidating',
+    'break my legs', 'break your legs', 'hurt you', 'hurt me', 'hurt your family', 'come after you',
+    "you'll regret", 'youll regret', 'make you pay',
+  ],
   // "refusing to"/"refused to" alone are far too generic — a custody
   // dispute, an insurance exchange, or a hospital declining liability
   // all involve someone "refusing to" do something, none of them a
@@ -41,13 +52,18 @@ const CONCEPT_KEYWORDS = {
   'service deficiency': [
     'denied service', 'defective product', 'refused to repair', 'refusing to repair', 'refuses to repair',
     'refused to replace', 'refusing to replace', 'refuses to replace', 'refused to refund', 'refusing to refund',
-    'refuses to refund', 'wont repair', "won't repair", 'wont replace', "won't replace", 'wont refund', "won't refund",
+    'refuses to refund', 'refused to fix', 'refusing to fix', 'refuses to fix', 'wont repair', "won't repair",
+    'wont replace', "won't replace", 'wont refund', "won't refund", 'wont fix', "won't fix",
   ],
   // "work"/"office" alone are far too generic ("work visa", "work of
   // art", "office supplies") — kept to words that actually imply an
   // employer/employee relationship.
   employment: ['employer', 'employee', 'workplace', 'coworker', 'colleague', 'my boss', 'my job'],
-  'sexual offence': ['sexual assault', 'molested', 'harassed', 'harassment', 'outraging her modesty'],
+  'sexual offence': [
+    'sexual assault', 'molested', 'harassed', 'harassment', 'outraging her modesty', 'grabbed me',
+    'groped', 'touched me inappropriately', 'inappropriately touched', 'forced himself', 'unwanted touching',
+    'would not let go', "wouldn't let go",
+  ],
   'false accusation': ['falsely accused', 'false allegation', 'false complaint', 'wrongly accused'],
   defamation: ['defamed', 'defamatory', 'reputation'],
 };

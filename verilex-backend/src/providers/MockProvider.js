@@ -118,6 +118,24 @@ function scoreAgainstQuery(record, queryTokens, queryTextLower, filters) {
   // distinct words overlapping is strong enough signal on its own.
   if (matchedTokens.size >= 3) return score;
   if (matchedTokens.size === 2 && hasSharedConceptPhrase(record, queryTextLower)) return score;
+  // A single matched token is trusted only when it's the one case that
+  // can't be coincidental: the scenario extractor assigned this exact
+  // single-word concept (e.g. "intimidation", "cheating") — not a
+  // generic query word — and the record carries that identical word as
+  // one of its own concept tags. Unlike the two-word case, there's no
+  // weaker "coincidence" explanation available for an exact tag match —
+  // except for a handful of words used as a broad secondary category
+  // label across unrelated fixtures (e.g. "employment" is tagged on
+  // both a wages fixture and a retrenchment fixture; it describes what
+  // area of law a record sits in, not specifically what it's about), so
+  // those are excluded from qualifying alone.
+  const TOO_BROAD_ALONE = new Set(['employment']);
+  if (matchedTokens.size === 1) {
+    const [onlyToken] = matchedTokens;
+    if (!TOO_BROAD_ALONE.has(onlyToken) && (record.concepts || []).some((c) => c.toLowerCase() === onlyToken)) {
+      return score;
+    }
+  }
   return 0;
 }
 
