@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonSourceView } from '../components/Skeleton.jsx';
+import { useDelayedLoading } from '../hooks/useDelayedLoading.js';
 
 export default function SourcePage() {
   const { sourceId } = useParams();
@@ -60,7 +61,8 @@ export default function SourcePage() {
     }
   }
 
-  if (loading) return <SkeletonSourceView />;
+  const showSkeleton = useDelayedLoading(loading);
+  if (loading) return showSkeleton ? <SkeletonSourceView /> : null;
   if (error && !data) return <div className="notice">Error: {error}</div>;
   if (!data) return null;
 

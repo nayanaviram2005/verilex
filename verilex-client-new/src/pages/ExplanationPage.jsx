@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonExplanation } from '../components/Skeleton.jsx';
 import { downloadExplanationMemo } from '../utils/memo.js';
+import { useDelayedLoading } from '../hooks/useDelayedLoading.js';
 
 function Section({ label, children }) {
   return (
@@ -43,7 +44,8 @@ export default function ExplanationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [explanationId]);
 
-  if (loading) return <SkeletonExplanation />;
+  const showSkeleton = useDelayedLoading(loading);
+  if (loading) return showSkeleton ? <SkeletonExplanation /> : null;
   if (error) return <div className="notice">Error: {error}</div>;
   if (!data) return null;
 

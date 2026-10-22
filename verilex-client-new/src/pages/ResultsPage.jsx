@@ -3,6 +3,7 @@ import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonResultsList } from '../components/Skeleton.jsx';
 import { downloadSearchMemo } from '../utils/memo.js';
+import { useDelayedLoading } from '../hooks/useDelayedLoading.js';
 
 const STATUS_LABEL = { current: 'CURRENT', repealed: 'REPEALED', amended: 'AMENDED', unknown: 'STATUS UNKNOWN' };
 const STATUS_CLASS = { current: 'accent', repealed: 'warn', amended: 'dim', unknown: 'dim' };
@@ -108,7 +109,8 @@ export default function ResultsPage() {
     });
   }, [data, sourceTypeFilter, statusFilter]);
 
-  if (loading) return <SkeletonResultsList />;
+  const showSkeleton = useDelayedLoading(loading);
+  if (loading) return showSkeleton ? <SkeletonResultsList /> : null;
   if (error) return <div className="notice">Error: {error}</div>;
   if (!data) return null;
 

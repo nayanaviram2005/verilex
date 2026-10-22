@@ -77,7 +77,8 @@ export default function AppHomePage() {
     <div className="stack" style={{ gap: 24 }}>
       <div className="spread">
         <div>
-          <h1 style={{ fontSize: 24, marginBottom: 6 }}>Describe what happened.</h1>
+          <span className="eyebrow" style={{ color: 'var(--accent-deep)' }}>Situation Search</span>
+          <h1 style={{ fontSize: 26, margin: '10px 0 6px' }}>Describe what happened.</h1>
           <p className="muted small" style={{ margin: 0 }}>
             No legal terminology required. Verilex will identify the legal concepts involved.
           </p>

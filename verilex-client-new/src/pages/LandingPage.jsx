@@ -4,13 +4,6 @@ import { useAuth, AUTH_STATUS } from '../context/AuthContext.jsx';
 
 const EXAMPLE_AREAS = ['Tenancy', 'Employment', 'Online Fraud', 'Consumer Disputes'];
 
-const STATS = [
-  { n: '3', label: 'Retrieval Methods Fused — API, Lexical, Semantic' },
-  { n: '6', label: 'Stages, Situation to Grounded Explanation' },
-  { n: '0', label: 'Fabricated Citations — Ever' },
-  { n: '1', label: 'Source Per Explanation, Strictly Grounded' },
-];
-
 const PIPELINE_STEPS = [
   { id: '01', label: 'Describe', detail: 'You describe what happened, in your own words.' },
   { id: '02', label: 'Understand', detail: 'The system extracts the legal concepts involved.' },
@@ -77,7 +70,7 @@ export default function LandingPage() {
       <section className="hero-dark bleed">
         <div className="hero-inner">
           <div>
-            <span className="eyebrow-dark">Semantic Legal Discovery</span>
+            <span className="eyebrow">Semantic Legal Discovery</span>
             <h1 className="hero-headline">
               Describe what happened.
               <br />
@@ -111,23 +104,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ---------------- STAT BAR ---------------- */}
-      <section className="stat-bar bleed">
-        <div className="stat-bar-inner">
-          {STATS.map((s) => (
-            <div key={s.label} className="stat-item">
-              <div className="stat-number">{s.n}</div>
-              <div className="stat-label">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <div className="container" style={{ padding: '72px 24px' }}>
         {/* ---------------- HOW IT WORKS ---------------- */}
         <section id="how-it-works" style={{ marginBottom: 72 }}>
           <div className="section-head">
-            <span className="eyebrow-dark" style={{ color: 'var(--accent-deep)' }}>Process</span>
+            <span className="eyebrow" style={{ color: 'var(--accent-deep)' }}>Process</span>
             <h2>How it works</h2>
           </div>
           <div className="grid-3">
@@ -144,7 +125,7 @@ export default function LandingPage() {
         {/* ---------------- DIFFERENTIATOR ---------------- */}
         <section style={{ marginBottom: 72 }}>
           <div className="section-head">
-            <span className="eyebrow-dark" style={{ color: 'var(--accent-deep)' }}>Distinction</span>
+            <span className="eyebrow" style={{ color: 'var(--accent-deep)' }}>Distinction</span>
             <h2>Not another AI legal chatbot</h2>
           </div>
           <div className="grid-2">
@@ -170,7 +151,7 @@ export default function LandingPage() {
         {/* ---------------- PRINCIPLES / SOURCE INTEGRITY ---------------- */}
         <section>
           <div className="section-head">
-            <span className="eyebrow-dark" style={{ color: 'var(--accent-deep)' }}>Source Integrity</span>
+            <span className="eyebrow" style={{ color: 'var(--accent-deep)' }}>Source Integrity</span>
             <h2>Grounded in real, verifiable sources</h2>
           </div>
           <div className="badge-row">

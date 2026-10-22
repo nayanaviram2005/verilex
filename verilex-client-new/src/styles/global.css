@@ -3,7 +3,7 @@
    Same three-colour palette as before — black, brown, white/cream — but
    with black now used as a real structural surface (hero, CTA panel,
    footer), not just a thin masthead strip, and the page rebuilt around
-   an asymmetric hero, a stat bar, trust badges and editorial cards
+   an asymmetric hero, trust badges and editorial cards
    instead of the previous straight reskin of the neo-brutalist layout.
    Typography unchanged: Playfair Display for headings, Tinos (a Times
    New Roman–metric-compatible face) for everything else. No monospace.
@@ -181,7 +181,7 @@ button {
 }
 
 /* Cancels .container's own padding so the landing page's full-bleed
-   sections (hero, stat bar, CTA) can run edge-to-edge; .bleed itself
+   sections (hero, CTA) can run edge-to-edge; .bleed itself
    then breaks each section out to the full viewport width. */
 .landing-root {
   margin: -48px -24px -96px;
@@ -517,7 +517,7 @@ hr.rule {
 }
 
 /* =========================================================================
-   LANDING PAGE — asymmetric dark hero, stat bar, trust badges, dark CTA
+   LANDING PAGE — asymmetric dark hero, trust badges, dark CTA
    panel. Built from the idiom of an established law-firm site: deep
    black, brown accenting, serif display headlines, sharp corners,
    hairline rules — never soft gradients or rounded glass cards.
@@ -554,7 +554,7 @@ hr.rule {
   .hero-inner { grid-template-columns: 1fr; }
 }
 
-.eyebrow-dark {
+.eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -566,7 +566,7 @@ hr.rule {
   color: var(--accent);
   margin-bottom: 18px;
 }
-.eyebrow-dark::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
+.eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
 
 .hero-headline {
   font-family: var(--display);
@@ -600,50 +600,6 @@ hr.rule {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* ---------- stat bar ---------- */
-
-.stat-bar {
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  padding: 44px 32px;
-}
-
-.stat-bar-inner {
-  max-width: 1180px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.stat-item {
-  text-align: center;
-  padding: 0 18px;
-  border-left: 1px solid var(--border);
-}
-.stat-item:first-child { border-left: none; }
-
-.stat-number {
-  font-family: var(--display);
-  font-weight: 600;
-  font-size: 34px;
-  color: var(--ink);
-  font-variant-numeric: oldstyle-nums;
-}
-
-.stat-label {
-  margin-top: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-soft);
-}
-
-@media (max-width: 760px) {
-  .stat-bar-inner { grid-template-columns: repeat(2, 1fr); row-gap: 28px; }
-  .stat-item:nth-child(3) { border-left: none; }
 }
 
 /* ---------- trust badge row ---------- */
@@ -756,38 +712,70 @@ hr.rule {
 }
 
 /* =========================================================================
-   SKELETON LOADING — content-shaped atoms, not generic shimmer blocks.
-   Each skeleton is composed to mirror the exact shape of the real content
-   it stands in for (title bar, meta fragments, paragraph lines, badge
-   circles) so there is zero layout shift on load, and uses a soft pulse
-   (opacity breathing) rather than an animated shimmer sweep.
+   SKELETON LOADING — transparent-text technique.
+   Skeletons are built from the SAME markup as the real content (same tag,
+   same class, often the same or representative static text) rather than
+   synthetic grey bars at guessed widths. Text becomes transparent with a
+   shimmer gradient clipped to its own glyphs via background-clip: text, so
+   dimensions are pixel-perfect by construction — the skeleton IS the real
+   element, just not yet readable. Non-text placeholders (icons, swatches)
+   use .skel-block, a plain shimmering fill. Colors are derived from the
+   existing --border/--bg-card tokens, not hardcoded greys, so the skeleton
+   stays correct if the palette ever changes. prefers-reduced-motion swaps
+   the sweep for a static muted fill.
    ========================================================================= */
 
-@keyframes skel-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
-}
-
-.skel {
-  background: #e7ddc5;
-  animation: skel-pulse 1.7s ease-in-out infinite;
+@keyframes skel-shimmer {
+  from { background-position: 160% 0; }
+  to { background-position: -60% 0; }
 }
 
 .skel-text {
-  height: 11px;
+  background-image: linear-gradient(100deg, var(--border) 35%, var(--bg-card) 50%, var(--border) 65%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: skel-shimmer 1.8s linear infinite;
+  user-select: none;
+  display: inline-block;
 }
 
-.skel-title {
-  height: 22px;
+.skel-block {
+  position: relative;
+  overflow: hidden;
+  background: var(--border);
+}
+.skel-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.65) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: skel-shimmer 1.8s linear infinite;
 }
 
-.skel-circle {
-  border-radius: 50%;
+@media (prefers-reduced-motion: reduce) {
+  .skel-text {
+    background-image: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    color: transparent;
+    background-color: var(--border);
+    animation: none;
+  }
+  .skel-block::after {
+    animation: none;
+    display: none;
+  }
 }
 
-.skel-tag {
-  height: 20px;
-  width: 80px;
+.skel-fade-in {
+  animation: skel-fade-in 0.2s ease-out;
+}
+@keyframes skel-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .skel-panel {

@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonResultsList } from '../components/Skeleton.jsx';
+import { useDelayedLoading } from '../hooks/useDelayedLoading.js';
 
 export default function StarredPage() {
   const [starred, setStarred] = useState(null);
   const [error, setError] = useState(null);
+  const loading = starred === null;
 
   useEffect(() => {
     api
@@ -14,13 +16,15 @@ export default function StarredPage() {
       .catch((err) => setError(err.message));
   }, []);
 
+  const showSkeleton = useDelayedLoading(loading);
   if (error) return <div className="notice">Error: {error}</div>;
-  if (!starred) return <SkeletonResultsList count={3} showScenario={false} />;
+  if (loading) return showSkeleton ? <SkeletonResultsList count={3} showScenario={false} /> : null;
 
   return (
     <div className="stack">
-      <div className="panel-header" style={{ border: 'none', margin: 0, padding: 0 }}>
-        <h2 style={{ fontSize: 20 }}>Starred Sources</h2>
+      <div>
+        <span className="eyebrow" style={{ color: 'var(--accent-deep)' }}>Account</span>
+        <h2 style={{ fontSize: 24, marginTop: 10 }}>Starred Sources</h2>
       </div>
 
       {starred.length === 0 && (

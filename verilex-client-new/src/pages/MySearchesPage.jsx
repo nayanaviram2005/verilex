@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonResultsList } from '../components/Skeleton.jsx';
+import { useDelayedLoading } from '../hooks/useDelayedLoading.js';
 
 export default function MySearchesPage() {
   const [searches, setSearches] = useState(null);
   const [error, setError] = useState(null);
+  const loading = searches === null;
 
   useEffect(() => {
     api
@@ -14,13 +16,15 @@ export default function MySearchesPage() {
       .catch((err) => setError(err.message));
   }, []);
 
+  const showSkeleton = useDelayedLoading(loading);
   if (error) return <div className="notice">Error: {error}</div>;
-  if (!searches) return <SkeletonResultsList count={3} showScenario={false} />;
+  if (loading) return showSkeleton ? <SkeletonResultsList count={3} showScenario={false} /> : null;
 
   return (
     <div className="stack">
-      <div className="panel-header" style={{ border: 'none', margin: 0, padding: 0 }}>
-        <h2 style={{ fontSize: 20 }}>My Searches</h2>
+      <div>
+        <span className="eyebrow" style={{ color: 'var(--accent-deep)' }}>Account</span>
+        <h2 style={{ fontSize: 24, marginTop: 10 }}>My Searches</h2>
       </div>
 
       {searches.length === 0 && (
