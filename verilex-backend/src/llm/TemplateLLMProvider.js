@@ -1,5 +1,17 @@
 import { LLMProvider } from './LLMProvider.js';
 
+// Plain substring matching (lower.includes(k)) is not safe for short
+// keywords: "rent" (meant for tenancy) matches inside "curRENT" and
+// "diffeRENT", "job" could match inside a longer unrelated word, etc. —
+// this silently injects a wrong concept into the search query for almost
+// any unrelated scenario, which then pollutes ranking for every provider.
+// Matching on a word boundary instead means a keyword only counts when it
+// actually appears as its own word (or phrase).
+function containsKeyword(haystackLower, keyword) {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(haystackLower);
+}
+
 const CONCEPT_KEYWORDS = {
   'unpaid wages': ['salary', 'wage', 'wages', 'paid', 'unpaid', 'payment'],
   termination: ['terminated', 'fired', 'dismissed', 'not come back', 'let go', 'sacked'],
@@ -32,7 +44,7 @@ export class TemplateLLMProvider extends LLMProvider {
   async extractScenario(rawQuery) {
     const lower = rawQuery.toLowerCase();
     const concepts = Object.entries(CONCEPT_KEYWORDS)
-      .filter(([, keywords]) => keywords.some((k) => lower.includes(k)))
+      .filter(([, keywords]) => keywords.some((k) => containsKeyword(lower, k)))
       .map(([concept]) => concept);
 
     const events = rawQuery
@@ -65,7 +77,7 @@ export class TemplateLLMProvider extends LLMProvider {
     const scenarioLower = scenarioText.toLowerCase();
     const matchedTerms = [];
     for (const [concept, keywords] of Object.entries(CONCEPT_KEYWORDS)) {
-      if (text.toLowerCase().includes(concept) && keywords.some((k) => scenarioLower.includes(k))) {
+      if (text.toLowerCase().includes(concept) && keywords.some((k) => containsKeyword(scenarioLower, k))) {
         matchedTerms.push(concept);
       }
     }

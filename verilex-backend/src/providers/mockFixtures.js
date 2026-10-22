@@ -210,6 +210,47 @@ export const MOCK_SOURCES = [
       'Whoever threatens another with any injury to his person, reputation or property, or to the person or reputation of any one in whom that person is interested, with intent to cause alarm to that person, or to cause that person to do any act which he is not legally bound to do, or to omit to do any act which that person is legally entitled to do, as the means of avoiding the execution of such threat, commits criminal intimidation.',
     concepts: ['threat', 'intimidation', 'coercion', 'harassment'],
   },
+  {
+    providerSourceId: 'bns-74',
+    title: 'Bharatiya Nyaya Sanhita, 2023 — Section 74: Assault or criminal force to woman with intent to outrage her modesty',
+    sourceType: 'section',
+    url: 'https://www.indiacode.nic.in/handle/123456789/20062',
+    act: 'Bharatiya Nyaya Sanhita, 2023',
+    section: '74',
+    court: null,
+    jurisdiction: 'India (Central)',
+    jurisdictionLevel: 'central',
+    state: null,
+    date: '2023-12-25',
+    effectiveDate: '2024-07-01',
+    repealDate: null,
+    currentStatus: 'current',
+    fullText:
+      'Whoever assaults or uses criminal force to any woman, intending to outrage or knowing it to be likely that he will thereby outrage her modesty, shall be punished with rigorous imprisonment for a term which shall not be less than one year but which may extend to five years, and shall also be liable to fine. ' +
+      'This section corresponds to Section 354 of the repealed Indian Penal Code, 1860.',
+    concepts: ['sexual offence', 'outraging modesty', 'assault on woman', 'criminal force'],
+  },
+  {
+    providerSourceId: 'bns-356',
+    title: 'Bharatiya Nyaya Sanhita, 2023 — Section 356: Defamation',
+    sourceType: 'section',
+    url: 'https://www.indiacode.nic.in/handle/123456789/20062',
+    act: 'Bharatiya Nyaya Sanhita, 2023',
+    section: '356',
+    court: null,
+    jurisdiction: 'India (Central)',
+    jurisdictionLevel: 'central',
+    state: null,
+    date: '2023-12-25',
+    effectiveDate: '2024-07-01',
+    repealDate: null,
+    currentStatus: 'current',
+    fullText:
+      'Whoever, by words either spoken or intended to be read, or by signs or by visible representations, makes or publishes any imputation concerning any person intending to harm, or knowing or having reason to believe that such imputation will harm, the reputation of such person, is said, except in the cases hereinafter expected, to defame that person. ' +
+      'A false and malicious accusation made with intent to harm another person\'s reputation may itself amount to an imputation covered by this section. ' +
+      'This section corresponds to Section 499 of the repealed Indian Penal Code, 1860.',
+    concepts: ['defamation', 'false accusation', 'reputation', 'malicious imputation'],
+  },
 ];
 
 export const MOCK_JUDGMENTS = [

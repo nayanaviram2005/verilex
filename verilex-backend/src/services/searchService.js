@@ -8,6 +8,41 @@ import { embedQuery, semanticSearch } from './embeddingService.js';
 
 const WEIGHTS = { api: 3, lexical: 2, semantic: 2.5, crossProviderBonus: 1.5 };
 
+// Same stopword/meaningful-token logic MockProvider uses to score its own
+// results, applied here as a relevance floor over FUSED candidates. Lexical
+// and semantic hits already guarantee some real match (ts_rank requires
+// every query term present; semantic-only hits are separately gated below),
+// but an "api" hit is trusted on the provider's word alone — and a
+// third-party provider that doesn't actually filter by query server-side
+// (a real risk: see InsightLawProvider's schema caveat) would otherwise let
+// the same static result set outrank everything for every query, however
+// unrelated. An api-only candidate (no lexical/semantic corroboration) must
+// share at least one real topical word with the query before it's trusted.
+const STOPWORDS = new Set([
+  'the', 'and', 'for', 'are', 'was', 'were', 'been', 'being', 'have', 'has', 'had', 'not', 'with',
+  'that', 'this', 'these', 'those', 'from', 'they', 'them', 'their', 'then', 'than', 'also', 'into',
+  'onto', 'upon', 'about', 'against', 'because', 'while', 'when', 'where', 'what', 'which', 'who',
+  'whom', 'whose', 'will', 'shall', 'should', 'would', 'could', 'can', 'may', 'might', 'must', 'you',
+  'your', 'yours', 'me', 'my', 'mine', 'him', 'his', 'her', 'hers', 'its', 'our', 'ours', 'over',
+  'under', 'after', 'before', 'during', 'between', 'out', 'off', 'own', 'same', 'such', 'very',
+  'just', 'more', 'most', 'some', 'any', 'all', 'each', 'other', 'someone', 'something', 'anything',
+  'there', 'here', 'now', 'once', 'only',
+]);
+
+function isMeaningfulToken(token) {
+  return token.length >= 4 && !STOPWORDS.has(token);
+}
+
+function queryTokensFor(queryText) {
+  return [...new Set((queryText || '').toLowerCase().split(/[^a-z0-9]+/).filter(isMeaningfulToken))];
+}
+
+function hasTopicalOverlap(row, meaningfulTokens) {
+  if (!meaningfulTokens.length) return true; // nothing meaningful to check against — don't block
+  const haystack = `${row.title || ''} ${row.act || ''} ${row.section || ''} ${row.full_text || ''}`.toLowerCase();
+  return meaningfulTokens.some((t) => haystack.includes(t));
+}
+
 function buildReason(source, concepts, mergedProviders) {
   const sourceConcepts = source.rawProviderMetadata?.concepts || [];
   const overlap = sourceConcepts.filter((c) =>
@@ -204,10 +239,16 @@ export async function runSituationSearch({ userId, rawQuery, state, incidentDate
   // With a real embedding model, a strong-enough semantic-only match is
   // still allowed through (semanticIsMeaningful) since it's genuine signal.
   const SEMANTIC_ONLY_MIN_SCORE = 1.5;
+  const meaningfulTokens = queryTokensFor(queryText);
   let candidates = [...fused.values()].filter((c) => {
     const onlySemantic = c.methods && c.methods.size === 1 && c.methods.has('semantic');
-    if (!onlySemantic) return true;
-    return semanticIsMeaningful && c.score >= SEMANTIC_ONLY_MIN_SCORE;
+    if (onlySemantic) return semanticIsMeaningful && c.score >= SEMANTIC_ONLY_MIN_SCORE;
+    // An api-only hit (no lexical/semantic corroboration) is only trusted if
+    // it actually shares real vocabulary with this query — see note above
+    // STOPWORDS. Lexical/semantic/mixed hits already carry their own signal.
+    const onlyApi = c.methods && c.methods.size === 1 && c.methods.has('api');
+    if (onlyApi) return hasTopicalOverlap(c.row, meaningfulTokens);
+    return true;
   });
 
   // apply user-supplied filters as a hard narrow, never inventing values
@@ -295,14 +336,25 @@ export async function runSourceSearch({ userId, rawQuery, filters = {} }) {
   cached.forEach(({ row, normalized, mergedProviders }, idx) => {
     const positionScore = WEIGHTS.api * (1 - idx / Math.max(providerResults.length, 1));
     const crossProviderBonus = mergedProviders?.length > 1 ? WEIGHTS.crossProviderBonus : 0;
-    fused.set(row.id, { row, normalized, mergedProviders, score: positionScore + crossProviderBonus });
+    fused.set(row.id, { row, normalized, mergedProviders, score: positionScore + crossProviderBonus, methods: new Set(['api']) });
   });
   for (const hit of lexicalHits) {
     const existing = fused.get(hit.sourceId);
-    if (existing) existing.score += WEIGHTS.lexical * hit.score;
+    if (existing) {
+      existing.score += WEIGHTS.lexical * hit.score;
+      existing.methods.add('lexical');
+    }
   }
 
-  let candidates = [...fused.values()];
+  // Same api-only relevance floor as runSituationSearch — see STOPWORDS note
+  // above: a provider that doesn't actually filter by query server-side
+  // must not be trusted to surface the same results for every search.
+  const meaningfulTokens = queryTokensFor(rawQuery);
+  let candidates = [...fused.values()].filter((c) => {
+    const onlyApi = c.methods && c.methods.size === 1 && c.methods.has('api');
+    if (onlyApi) return hasTopicalOverlap(c.row, meaningfulTokens);
+    return true;
+  });
   if (filters.sourceType) candidates = candidates.filter((c) => c.row.source_type === filters.sourceType);
   candidates.sort((a, b) => b.score - a.score);
   candidates = candidates.slice(0, 20);
