@@ -41,7 +41,18 @@ const STOPWORDS = new Set([
   'your', 'yours', 'me', 'my', 'mine', 'him', 'his', 'her', 'hers', 'its', 'our', 'ours', 'over',
   'under', 'after', 'before', 'during', 'between', 'out', 'off', 'own', 'same', 'such', 'very',
   'just', 'more', 'most', 'some', 'any', 'all', 'each', 'other', 'someone', 'something', 'anything',
-  'there', 'here', 'now', 'been', 'being', 'once', 'only', 'worried', 'filed',
+  'there', 'here', 'now', 'been', 'being', 'once', 'only', 'worried', 'filed', 'already', 'sent',
+  // Generic statutory/sentencing boilerplate — appears in nearly every
+  // penal provision's punishment clause ("imprisonment... which may
+  // extend to five years... or fine... or both"), so a word from this
+  // list coinciding with a query is not topical signal (e.g. a tax
+  // dispute mentioning "five lakh rupees" should not match an unrelated
+  // offence purely because its sentencing clause also says "five years").
+  'years', 'year', 'months', 'month', 'days', 'day', 'rupees', 'rupee', 'lakh', 'lakhs', 'crore',
+  'crores', 'fine', 'fined', 'fines', 'imprisonment', 'imprisoned', 'punished', 'punishable',
+  'extend', 'extended', 'term', 'terms', 'description', 'liable', 'section', 'sections', 'act',
+  'acts', 'person', 'persons', 'whoever', 'provision', 'provisions', 'clause', 'subsection',
+  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'said', 'means',
 ]);
 
 // A word counts as a meaningful match only if it's long enough and not a
@@ -60,6 +71,19 @@ function hasSharedConceptPhrase(record, queryTextLower) {
   return (record.concepts || []).some((c) => c.length >= 6 && queryTextLower.includes(c.toLowerCase()));
 }
 
+// A crude suffix strip, not a real lemmatizer — just enough so an
+// inflection the query happens to use ("threatening") still matches a
+// fixture that only uses a different inflection of the same word
+// ("threatens"), rather than missing a genuinely relevant result purely
+// over grammar. Returns null when there's no safe suffix to strip.
+function stem(token) {
+  if (token.length > 7 && token.endsWith('ing')) return token.slice(0, -3);
+  if (token.length > 6 && token.endsWith('ed')) return token.slice(0, -2);
+  if (token.length > 6 && token.endsWith('es')) return token.slice(0, -2);
+  if (token.length > 5 && token.endsWith('s') && !token.endsWith('ss')) return token.slice(0, -1);
+  return null;
+}
+
 function scoreAgainstQuery(record, queryTokens, queryTextLower, filters) {
   const haystack = `${record.title} ${record.fullText} ${(record.concepts || []).join(' ')}`.toLowerCase();
   let score = 0;
@@ -70,9 +94,13 @@ function scoreAgainstQuery(record, queryTokens, queryTextLower, filters) {
   const matchedTokens = new Set();
   for (const token of queryTokens) {
     if (!isMeaningfulToken(token)) continue;
+    const stemmed = stem(token);
     let tokenScore = 0;
-    if (haystack.includes(token)) tokenScore += 1;
-    if ((record.concepts || []).some((c) => c.toLowerCase().includes(token))) tokenScore += 2;
+    if (haystack.includes(token) || (stemmed && haystack.includes(stemmed))) tokenScore += 1;
+    if ((record.concepts || []).some((c) => {
+      const cLower = c.toLowerCase();
+      return cLower.includes(token) || (stemmed && cLower.includes(stemmed));
+    })) tokenScore += 2;
     if (tokenScore > 0) {
       score += tokenScore;
       matchedTokens.add(token);

@@ -13,7 +13,9 @@ function containsKeyword(haystackLower, keyword) {
 }
 
 const CONCEPT_KEYWORDS = {
-  'unpaid wages': ['salary', 'wage', 'wages', 'paid', 'unpaid', 'payment'],
+  // "paid"/"payment" alone are far too generic (paid taxes, paid rent,
+  // paid a fine) — kept to words/phrases specific to a wage dispute.
+  'unpaid wages': ['salary', 'wage', 'wages', 'unpaid salary', 'havent been paid', "haven't been paid", 'hasnt paid me', "hasn't paid me", 'not paid me'],
   termination: ['terminated', 'fired', 'dismissed', 'not come back', 'let go', 'sacked'],
   'security deposit': ['deposit'],
   tenancy: ['landlord', 'tenant', 'rent', 'lease', 'moved out', 'vacated'],
@@ -21,15 +23,30 @@ const CONCEPT_KEYWORDS = {
   cheating: ['tricked', 'deceived', 'fraud', 'cheated', 'scam', 'scammed'],
   'dishonest inducement': ['tricked', 'induced', 'convinced me to'],
   'money transfer fraud': ['transferred money', 'sent money', 'bank transfer', 'upi'],
+  impersonation: ['pretending to be', 'pretended to be', 'claiming to be from', 'posing as', 'impersonating', 'impersonated'],
   // Single generic words like "online", "website", "app", "call" fire on
   // almost any scenario that merely happened to occur online or involve a
   // phone call (e.g. a consumer buying a washing machine "online" and
   // customer support "calls" going nowhere is not online fraud) — kept to
   // phrases and words specific enough to actually signal fraud.
   'online fraud': ['phishing', 'fake website', 'otp fraud', 'online scam', 'fraudulent website', 'fake customer care'],
-  intimidation: ['threatened', 'threat', 'intimidated'],
-  'service deficiency': ['service', 'refused to', 'refusing to', 'refuses to', 'denied service', 'wont repair', "won't repair", 'wont replace', "won't replace", 'wont refund', "won't refund"],
-  employment: ['employer', 'employee', 'job', 'work', 'office'],
+  // Matched as whole words, so inflections need listing explicitly —
+  // "threatening" is not matched by a "threat"/"threatened" entry alone.
+  intimidation: ['threatened', 'threatening', 'threatens', 'threat', 'threats', 'intimidated', 'intimidating'],
+  // "refusing to"/"refused to" alone are far too generic — a custody
+  // dispute, an insurance exchange, or a hospital declining liability
+  // all involve someone "refusing to" do something, none of them a
+  // consumer-service deficiency. Anchored to refusing a specific
+  // product/service remedy instead.
+  'service deficiency': [
+    'denied service', 'defective product', 'refused to repair', 'refusing to repair', 'refuses to repair',
+    'refused to replace', 'refusing to replace', 'refuses to replace', 'refused to refund', 'refusing to refund',
+    'refuses to refund', 'wont repair', "won't repair", 'wont replace', "won't replace", 'wont refund', "won't refund",
+  ],
+  // "work"/"office" alone are far too generic ("work visa", "work of
+  // art", "office supplies") — kept to words that actually imply an
+  // employer/employee relationship.
+  employment: ['employer', 'employee', 'workplace', 'coworker', 'colleague', 'my boss', 'my job'],
   'sexual offence': ['sexual assault', 'molested', 'harassed', 'harassment', 'outraging her modesty'],
   'false accusation': ['falsely accused', 'false allegation', 'false complaint', 'wrongly accused'],
   defamation: ['defamed', 'defamatory', 'reputation'],
