@@ -21,9 +21,14 @@ const CONCEPT_KEYWORDS = {
   cheating: ['tricked', 'deceived', 'fraud', 'cheated', 'scam', 'scammed'],
   'dishonest inducement': ['tricked', 'induced', 'convinced me to'],
   'money transfer fraud': ['transferred money', 'sent money', 'bank transfer', 'upi'],
-  'online fraud': ['online', 'phishing', 'website', 'app', 'call'],
+  // Single generic words like "online", "website", "app", "call" fire on
+  // almost any scenario that merely happened to occur online or involve a
+  // phone call (e.g. a consumer buying a washing machine "online" and
+  // customer support "calls" going nowhere is not online fraud) — kept to
+  // phrases and words specific enough to actually signal fraud.
+  'online fraud': ['phishing', 'fake website', 'otp fraud', 'online scam', 'fraudulent website', 'fake customer care'],
   intimidation: ['threatened', 'threat', 'intimidated'],
-  'service deficiency': ['service', 'refused to', 'denied service'],
+  'service deficiency': ['service', 'refused to', 'refusing to', 'refuses to', 'denied service', 'wont repair', "won't repair", 'wont replace', "won't replace", 'wont refund', "won't refund"],
   employment: ['employer', 'employee', 'job', 'work', 'office'],
   'sexual offence': ['sexual assault', 'molested', 'harassed', 'harassment', 'outraging her modesty'],
   'false accusation': ['falsely accused', 'false allegation', 'false complaint', 'wrongly accused'],
