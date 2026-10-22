@@ -51,7 +51,16 @@ function isMeaningfulToken(token) {
   return token.length >= 4 && !STOPWORDS.has(token);
 }
 
-function scoreAgainstQuery(record, queryTokens, filters) {
+// True only when one of the record's own concept tags (a short phrase,
+// e.g. "dishonest inducement") appears verbatim in the query text — i.e.
+// the scenario extractor assigned that exact concept to this scenario,
+// not just that some of its individual words happen to appear somewhere
+// in the record for unrelated reasons.
+function hasSharedConceptPhrase(record, queryTextLower) {
+  return (record.concepts || []).some((c) => c.length >= 6 && queryTextLower.includes(c.toLowerCase()));
+}
+
+function scoreAgainstQuery(record, queryTokens, queryTextLower, filters) {
   const haystack = `${record.title} ${record.fullText} ${(record.concepts || []).join(' ')}`.toLowerCase();
   let score = 0;
   // Track *distinct* words that hit, not the number of hits — a single
@@ -72,9 +81,16 @@ function scoreAgainstQuery(record, queryTokens, filters) {
   if (filters?.state && record.state && record.state.toLowerCase() === filters.state.toLowerCase()) score += 3;
   if (filters?.sourceType && record.sourceType === filters.sourceType) score += 1;
   if (filters?.act && record.act && record.act.toLowerCase().includes(filters.act.toLowerCase())) score += 3;
-  // Require at least two distinct meaningful words to overlap — a single
-  // incidental word match isn't enough to call something relevant.
-  return matchedTokens.size >= 2 ? score : 0;
+  // Two distinct meaningful words overlapping is the floor — but two
+  // words can each individually appear in a record for entirely
+  // unrelated reasons (e.g. "damage" and "property" both show up in
+  // nearly any offence's generic statutory boilerplate). Exactly two
+  // matches is only trusted when it's backed by a real shared concept
+  // phrase the scenario extractor actually assigned; three or more
+  // distinct words overlapping is strong enough signal on its own.
+  if (matchedTokens.size >= 3) return score;
+  if (matchedTokens.size === 2 && hasSharedConceptPhrase(record, queryTextLower)) return score;
+  return 0;
 }
 
 /**
@@ -85,8 +101,9 @@ export class MockProvider extends LegalSourceProvider {
   name = 'mock';
 
   async search(query, filters = {}) {
-    const queryTokens = (query || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-    const scored = ALL.map((record) => ({ record, score: scoreAgainstQuery(record, queryTokens, filters) }))
+    const queryTextLower = (query || '').toLowerCase();
+    const queryTokens = queryTextLower.split(/[^a-z0-9]+/).filter(Boolean);
+    const scored = ALL.map((record) => ({ record, score: scoreAgainstQuery(record, queryTokens, queryTextLower, filters) }))
       .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score);
 
