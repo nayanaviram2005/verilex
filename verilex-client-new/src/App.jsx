@@ -7,6 +7,7 @@ import SourcePage from './pages/SourcePage.jsx';
 import ExplanationPage from './pages/ExplanationPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import MySearchesPage from './pages/MySearchesPage.jsx';
+import StarredPage from './pages/StarredPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { useAuth, AUTH_STATUS } from './context/AuthContext.jsx';
 
@@ -44,6 +45,15 @@ function AccountMenu() {
             onClick={() => setOpen(false)}
           >
             My Searches
+          </Link>
+          <Link
+            to="/account/starred"
+            role="menuitem"
+            className="mono small"
+            style={{ display: 'block', padding: '10px 14px', color: 'var(--ink)', borderTop: '1px solid var(--border)' }}
+            onClick={() => setOpen(false)}
+          >
+            Starred Sources
           </Link>
           <button
             type="button"
@@ -162,6 +172,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MySearchesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account/starred"
+            element={
+              <ProtectedRoute>
+                <StarredPage />
               </ProtectedRoute>
             }
           />

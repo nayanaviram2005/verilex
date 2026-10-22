@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonResultsList } from '../components/Skeleton.jsx';
+import { downloadSearchMemo } from '../utils/memo.js';
 
 const STATUS_LABEL = { current: 'CURRENT', repealed: 'REPEALED', amended: 'AMENDED', unknown: 'STATUS UNKNOWN' };
 const STATUS_CLASS = { current: 'accent', repealed: 'warn', amended: 'dim', unknown: 'dim' };
@@ -129,6 +130,17 @@ export default function ResultsPage() {
             {concepts.map((c) => (
               <span key={c} className="tag accent">{c}</span>
             ))}
+          </div>
+        )}
+        {results?.length > 0 && (
+          <div className="row" style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => downloadSearchMemo({ search: data.search, scenario, results })}
+            >
+              Download Research Memo
+            </button>
           </div>
         )}
       </div>

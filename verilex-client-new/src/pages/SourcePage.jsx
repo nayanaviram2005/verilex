@@ -11,6 +11,8 @@ export default function SourcePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [explaining, setExplaining] = useState(false);
+  const [starred, setStarred] = useState(false);
+  const [starring, setStarring] = useState(false);
 
   const searchId = location.state?.searchId;
   const scenarioText = location.state?.scenarioText;
@@ -19,10 +21,31 @@ export default function SourcePage() {
     setLoading(true);
     api
       .getSource(sourceId)
-      .then(setData)
+      .then((res) => {
+        setData(res);
+        setStarred(Boolean(res.starred));
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [sourceId]);
+
+  async function toggleStar() {
+    if (starring) return;
+    setStarring(true);
+    try {
+      if (starred) {
+        await api.unstarSource(sourceId);
+        setStarred(false);
+      } else {
+        await api.starSource(sourceId);
+        setStarred(true);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setStarring(false);
+    }
+  }
 
   async function handleExplain() {
     setExplaining(true);
@@ -48,9 +71,20 @@ export default function SourcePage() {
       <div className="panel">
         <div className="panel-header">
           <span>Legal Source</span>
-          <span className={`tag ${source.current_status === 'current' ? 'accent' : 'warn'}`}>
-            {(source.current_status || 'unknown').toUpperCase()}
-          </span>
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              type="button"
+              className={`tag ${starred ? 'accent' : 'dim'}`}
+              style={{ cursor: 'pointer', background: 'transparent' }}
+              onClick={toggleStar}
+              disabled={starring}
+            >
+              {starred ? '★ Starred' : '☆ Star This Source'}
+            </button>
+            <span className={`tag ${source.current_status === 'current' ? 'accent' : 'warn'}`}>
+              {(source.current_status || 'unknown').toUpperCase()}
+            </span>
+          </div>
         </div>
 
         <h2 style={{ fontSize: 22, marginBottom: 10 }}>{source.title}</h2>

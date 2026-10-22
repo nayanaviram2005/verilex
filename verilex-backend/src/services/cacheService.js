@@ -87,3 +87,39 @@ export async function listChunksForSource(sourceId) {
   );
   return rows;
 }
+
+// Starring is a personal bookmark on an already-cached legal_sources row —
+// it never affects retrieval, ranking, or the cache itself.
+export async function starSource(userId, sourceId) {
+  const { rows } = await pool.query(
+    `INSERT INTO starred_sources (user_id, source_id) VALUES ($1, $2)
+     ON CONFLICT (user_id, source_id) DO NOTHING
+     RETURNING *`,
+    [userId, sourceId]
+  );
+  return rows[0] || null;
+}
+
+export async function unstarSource(userId, sourceId) {
+  await pool.query(`DELETE FROM starred_sources WHERE user_id = $1 AND source_id = $2`, [userId, sourceId]);
+}
+
+export async function isSourceStarred(userId, sourceId) {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM starred_sources WHERE user_id = $1 AND source_id = $2`,
+    [userId, sourceId]
+  );
+  return rows.length > 0;
+}
+
+export async function listStarredSources(userId) {
+  const { rows } = await pool.query(
+    `SELECT ss.id AS starred_id, ss.created_at AS starred_at, row_to_json(ls.*) AS source
+     FROM starred_sources ss
+     JOIN legal_sources ls ON ls.id = ss.source_id
+     WHERE ss.user_id = $1
+     ORDER BY ss.created_at DESC`,
+    [userId]
+  );
+  return rows;
+}

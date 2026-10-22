@@ -221,3 +221,19 @@ CREATE TABLE IF NOT EXISTS provider_metadata (
   config JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ---------------------------------------------------------------------
+-- Starred sources — a user's personal bookmark of a legal_sources row,
+-- independent of any one search (the same source can surface again from
+-- a different query later). Purely a user-side marker; never affects
+-- retrieval, ranking or caching.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS starred_sources (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source_id UUID NOT NULL REFERENCES legal_sources(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, source_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_starred_sources_user ON starred_sources(user_id, created_at DESC);

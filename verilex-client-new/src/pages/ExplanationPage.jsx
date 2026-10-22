@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { SkeletonExplanation } from '../components/Skeleton.jsx';
+import { downloadExplanationMemo } from '../utils/memo.js';
 
 function Section({ label, children }) {
   return (
@@ -99,6 +100,16 @@ export default function ExplanationPage() {
             <a href={source.url} target="_blank" rel="noreferrer">Verify Against the Original External Source</a>
           </p>
         )}
+
+        <div className="row" style={{ marginTop: 16 }}>
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => downloadExplanationMemo({ explanation, source, relatedJudgments })}
+          >
+            Download Explanation Memo
+          </button>
+        </div>
       </div>
     </div>
   );

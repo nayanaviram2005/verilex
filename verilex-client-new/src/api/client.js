@@ -49,6 +49,10 @@ export const api = {
     request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
 
   listSearches: () => request('/searches'),
+
+  starSource: (id) => request(`/sources/${id}/star`, { method: 'PUT' }),
+  unstarSource: (id) => request(`/sources/${id}/star`, { method: 'DELETE' }),
+  listStarred: () => request('/starred'),
 };
 
 export const BASE_URL = BASE;
