@@ -1,35 +1,39 @@
 /* =========================================================================
-   VERILEX — formal attorney / legal-practice interface.
-   Black, brown and white. Serif type throughout (Times New Roman family
-   for body/UI text, a serif display face reserved for headings) — no
-   monospace, no terminal motifs, no neon. Letterhead rules, bordered
-   cards, a dark masthead bar, restrained brass/mahogany accenting.
+   VERILEX — formal legal-practice interface, v3.
+   Same three-colour palette as before — black, brown, white/cream — but
+   with black now used as a real structural surface (hero, CTA panel,
+   footer), not just a thin masthead strip, and the page rebuilt around
+   an asymmetric hero, a stat bar, trust badges and editorial cards
+   instead of the previous straight reskin of the neo-brutalist layout.
+   Typography unchanged: Playfair Display for headings, Tinos (a Times
+   New Roman–metric-compatible face) for everything else. No monospace.
    ========================================================================= */
 
 :root {
-  --ink: #1c1510;
-  --ink-dim: #6e5c49;
-  --ink-faint: #a3907a;
+  --ink: #141210;
+  --ink-soft: #5b5648;
+  --ink-faint: #8d8673;
   --bg: #f6f1e7;
-  --bg-raised: #1b140f;
-  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --surface-dark: #141210;
+  --surface-dark-soft: #211d18;
 
   --accent: #5c3a21;
-  --accent-dim: #8a6a3f;
-  --brass: #9c7a3c;
-  --warn: #8a4a1f;
-  --danger: #7a2e1e;
-  --line: #5c3a21;
-  --border: #d9cbb0;
-  --border-strong: #1c1510;
+  --accent-deep: #3c2512;
+  --accent-soft: #e7dcc8;
 
-  /* Times New Roman family throughout — no exceptions. Tinos is a
-     metric-compatible Times New Roman; Playfair Display is reserved for
-     large display headings only and is itself a serif face, never a
-     second typeface family for body/UI text. */
-  --mono: "Tinos", "Times New Roman", Times, serif;
-  --sans: "Tinos", "Times New Roman", Times, serif;
+  --on-dark: #f6f1e7;
+  --on-dark-muted: #ab9f8c;
+
+  --warn: #7a2e1e;
+  --danger: #7a2e1e;
+  --border: #ded2b9;
+  --border-dark: rgba(246, 241, 231, 0.14);
+  --border-strong: #141210;
+
   --display: "Playfair Display", "Times New Roman", Times, serif;
+  --sans: "Tinos", "Times New Roman", Times, serif;
+  --mono: var(--sans);
 
   --border-w: 1px;
   --border-w-thick: 2px;
@@ -49,17 +53,17 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
   background: var(--accent);
-  color: #fff;
+  color: var(--ink);
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-deep);
   text-decoration: none;
 }
 a:hover {
@@ -67,7 +71,7 @@ a:hover {
 }
 
 .mono {
-  font-family: var(--mono);
+  font-family: var(--sans);
 }
 
 h1, h2, h3, h4 {
@@ -97,72 +101,69 @@ button {
 }
 
 .topbar {
-  border-bottom: 3px double var(--brass);
-  padding: 16px 28px;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  background: var(--bg-raised);
-  color: #f2ece0;
+  background: var(--surface-dark);
+  color: var(--on-dark);
   position: sticky;
   top: 0;
   z-index: 20;
+  height: 72px;
+  border-bottom: 1px solid var(--border-dark);
 }
 
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
+}
+
+.brand-icon {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  color: var(--accent);
 }
 
 .brand-mark {
   font-family: var(--display);
-  font-weight: 700;
-  font-size: 23px;
+  font-weight: 600;
+  font-size: 21px;
   letter-spacing: 0.01em;
   color: var(--ink);
 }
 
-/* Reused both in the dark masthead and on white panels (e.g. the login
-   card) — only the masthead context gets the light-on-dark color. */
 .topbar .brand-mark {
-  color: #f8f4ea;
-}
-
-.brand-mark .bracket {
-  color: var(--brass);
-  font-weight: 400;
+  color: var(--on-dark);
 }
 
 .brand-sub {
-  font-family: var(--sans);
-  font-style: italic;
-  font-size: 12px;
-  color: #c7b89c;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  display: none;
 }
 
 .topbar nav {
   display: flex;
   gap: 4px;
   font-family: var(--sans);
-  font-size: 14px;
-  text-transform: none;
-  letter-spacing: 0.01em;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .topbar nav a {
-  color: #d8cbb2;
-  padding: 8px 12px;
-  border: 1px solid transparent;
+  color: var(--on-dark-muted);
+  padding: 8px 14px;
+  border-bottom: 2px solid transparent;
 }
 .topbar nav a:hover,
 .topbar nav a.active {
-  color: #f8f4ea;
-  border-bottom: 1px solid var(--brass);
+  color: var(--on-dark);
+  border-bottom-color: var(--accent);
   text-decoration: none;
 }
 
@@ -170,17 +171,38 @@ button {
   width: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 40px 24px 88px;
+  padding: 48px 24px 96px;
   flex: 1;
+}
+
+.container.full {
+  max-width: none;
+  padding: 0;
+}
+
+/* Cancels .container's own padding so the landing page's full-bleed
+   sections (hero, stat bar, CTA) can run edge-to-edge; .bleed itself
+   then breaks each section out to the full viewport width. */
+.landing-root {
+  margin: -48px -24px -96px;
+}
+
+.bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+@media (max-width: 620px) {
+  .landing-root { margin: -32px -16px -64px; }
 }
 
 /* ---------- primitives ---------- */
 
 .panel {
   border: var(--border-w) solid var(--border);
-  background: var(--bg-panel);
-  padding: 24px;
-  box-shadow: 0 1px 0 var(--border);
+  background: var(--bg-card);
+  padding: 26px;
 }
 
 .panel-header {
@@ -188,14 +210,14 @@ button {
   align-items: center;
   justify-content: space-between;
   border-bottom: var(--border-w) solid var(--border);
-  margin: -24px -24px 18px;
-  padding: 12px 20px;
+  margin: -26px -26px 20px;
+  padding: 13px 20px;
   font-family: var(--sans);
-  font-size: 12px;
-  font-style: italic;
+  font-size: 11.5px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-dim);
+  letter-spacing: 0.09em;
+  color: var(--ink-soft);
 }
 
 .tag {
@@ -203,32 +225,33 @@ button {
   align-items: center;
   gap: 6px;
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 4px 10px;
+  padding: 5px 11px;
   border: 1px solid var(--border-strong);
   color: var(--ink);
   background: transparent;
 }
 
-.tag.accent { border-color: var(--accent); color: var(--accent); }
+.tag.accent { border-color: var(--accent-deep); color: var(--accent-deep); }
 .tag.warn { border-color: var(--warn); color: var(--warn); }
-.tag.dim { border-color: var(--border); color: var(--ink-dim); }
+.tag.dim { border-color: var(--border); color: var(--ink-soft); }
 
 .btn {
   display: inline-block;
   font-family: var(--sans);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
-  padding: 12px 22px;
+  padding: 13px 24px;
   border: var(--border-w-thick) solid var(--border-strong);
   background: transparent;
   color: var(--ink);
   text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn:hover:not(:disabled) {
@@ -248,14 +271,14 @@ button {
   color: #fdfaf4;
 }
 .btn.primary:hover:not(:disabled) {
-  background: var(--border-strong);
-  border-color: var(--border-strong);
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
   color: #fdfaf4;
 }
 
 .btn.ghost {
   border-color: var(--border);
-  color: var(--ink-dim);
+  color: var(--ink-soft);
 }
 .btn.ghost:hover:not(:disabled) {
   border-color: var(--ink);
@@ -263,14 +286,25 @@ button {
   background: transparent;
 }
 
+/* ghost button rendered on a dark surface (hero, CTA panel) */
+.btn.ghost.on-dark {
+  border-color: var(--border-dark);
+  color: var(--on-dark);
+}
+.btn.ghost.on-dark:hover:not(:disabled) {
+  border-color: var(--on-dark);
+  background: transparent;
+  color: var(--on-dark);
+}
+
 .field-label {
   display: block;
   font-family: var(--sans);
-  font-size: 12px;
-  font-style: italic;
+  font-size: 11.5px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-dim);
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
   margin-bottom: 8px;
 }
 
@@ -284,7 +318,7 @@ textarea, input[type="text"], input[type="date"], input[type="email"], input[typ
 }
 
 textarea:focus, input:focus, select:focus {
-  outline: 2px solid var(--brass);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
@@ -342,32 +376,31 @@ hr.rule {
 }
 
 @media (max-width: 620px) {
-  .topbar { padding: 12px 18px; }
-  .brand-sub { display: none; }
-  .container { padding: 24px 16px 64px; }
+  .topbar { padding: 0 16px; }
+  .container { padding: 32px 16px 64px; }
 }
 
 .stack { display: flex; flex-direction: column; gap: 16px; }
 .row { display: flex; align-items: center; gap: 12px; }
 .spread { display: flex; align-items: center; justify-content: space-between; }
 
-.muted { color: var(--ink-dim); }
+.muted { color: var(--ink-soft); }
 .small { font-size: 12px; }
 .mono.small { font-size: 12px; }
 
 .divider-label {
   font-family: var(--sans);
-  font-size: 12px;
-  font-style: italic;
+  font-size: 11.5px;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--accent);
+  color: var(--accent-deep);
   display: flex;
   align-items: center;
   gap: 10px;
   margin: 32px 0 14px;
 }
-.divider-label::before { content: "§"; color: var(--brass); font-style: normal; }
+.divider-label::before { content: ""; width: 18px; height: 2px; background: var(--accent); flex: none; }
 .divider-label::after {
   content: "";
   flex: 1;
@@ -377,62 +410,98 @@ hr.rule {
 .notice {
   border: var(--border-w-thick) solid var(--warn);
   color: var(--warn);
-  padding: 12px 16px;
+  padding: 13px 16px;
   font-family: var(--sans);
   font-size: 14px;
-  background: #fdf6ee;
+  background: #fbf2ef;
 }
 
 .notice.info {
   border-color: var(--border);
-  color: var(--ink-dim);
+  color: var(--ink-soft);
   background: #fff;
 }
 
 .callout-authority {
   border: 1px solid var(--border);
-  padding: 12px 16px;
+  padding: 13px 16px;
   font-family: var(--sans);
-  font-style: italic;
   font-size: 12.5px;
-  color: var(--ink-dim);
+  color: var(--ink-soft);
   letter-spacing: 0.01em;
-  background: #fffdf9;
-}
-
-.scanline-noise {
-  position: relative;
+  background: #fffdf8;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  width: 7px;
+  height: 7px;
   display: inline-block;
-  background: var(--accent);
+  background: var(--accent-deep);
 }
 .status-dot.warn { background: var(--warn); }
 .status-dot.danger { background: var(--danger); }
 
 .footer {
-  border-top: 3px double var(--brass);
-  padding: 22px 28px;
-  background: var(--bg-raised);
+  background: var(--surface-dark);
+  color: var(--on-dark-muted);
+  padding: 56px 32px 0;
+}
+
+.footer-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 32px;
+  padding-bottom: 40px;
+}
+
+.footer-col-title {
   font-family: var(--sans);
-  font-size: 12px;
-  font-style: italic;
-  color: #c7b89c;
-  text-transform: none;
-  letter-spacing: 0.01em;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--on-dark);
+  margin-bottom: 16px;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13.5px;
+}
+.footer-links a {
+  color: var(--on-dark-muted);
+}
+.footer-links a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footer-bottom {
+  max-width: 1180px;
+  margin: 0 auto;
+  border-top: 1px solid var(--border-dark);
+  padding: 20px 0;
   display: flex;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 760px) {
+  .footer-grid { grid-template-columns: 1fr; }
 }
 
 .loading-bar {
   font-family: var(--sans);
-  font-style: italic;
+  font-weight: 600;
   font-size: 13px;
-  color: var(--accent);
+  color: var(--accent-deep);
 }
 
 .loading-bar::after {
@@ -448,59 +517,283 @@ hr.rule {
 }
 
 /* =========================================================================
-   Skeleton loading — sepia/paper shimmer on bordered blocks, no neon,
-   no scanline. Reads as "a document being prepared," not a progress bar.
+   LANDING PAGE — asymmetric dark hero, stat bar, trust badges, dark CTA
+   panel. Built from the idiom of an established law-firm site: deep
+   black, brown accenting, serif display headlines, sharp corners,
+   hairline rules — never soft gradients or rounded glass cards.
    ========================================================================= */
 
-@keyframes skel-scan {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.skel-block {
+.hero-dark {
   position: relative;
-  background:
-    linear-gradient(
-      100deg,
-      transparent 30%,
-      rgba(92, 58, 33, 0.12) 48%,
-      rgba(92, 58, 33, 0.12) 52%,
-      transparent 70%
-    ),
-    #efe8d9;
-  background-size: 220% 100%;
-  border: 1px solid var(--border);
-  animation: skel-scan 1.8s linear infinite;
+  background: var(--surface-dark);
+  color: var(--on-dark);
+  overflow: hidden;
+  padding: 72px 32px 88px;
 }
 
-.skel-line {
-  height: 12px;
+.hero-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-radial-gradient(circle at 82% 18%, rgba(92, 58, 33, 0.16) 0, rgba(92, 58, 33, 0.16) 1px, transparent 1px, transparent 34px);
+  pointer-events: none;
+}
+
+.hero-inner {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; }
+}
+
+.eyebrow-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.eyebrow-dark::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
+
+.hero-headline {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(34px, 4.6vw, 54px);
+  line-height: 1.12;
+  margin: 0 0 20px;
+  letter-spacing: -0.01em;
+}
+
+.hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: 16.5px;
+  line-height: 1.7;
+  color: var(--on-dark-muted);
+  max-width: 520px;
+  margin: 0 0 30px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hero-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- stat bar ---------- */
+
+.stat-bar {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 44px 32px;
+}
+
+.stat-bar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-item {
+  text-align: center;
+  padding: 0 18px;
+  border-left: 1px solid var(--border);
+}
+.stat-item:first-child { border-left: none; }
+
+.stat-number {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 34px;
+  color: var(--ink);
+  font-variant-numeric: oldstyle-nums;
+}
+
+.stat-label {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 760px) {
+  .stat-bar-inner { grid-template-columns: repeat(2, 1fr); row-gap: 28px; }
+  .stat-item:nth-child(3) { border-left: none; }
+}
+
+/* ---------- trust badge row ---------- */
+
+.badge-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 760px) {
+  .badge-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 20px 14px;
+}
+
+.badge-seal {
+  width: 56px;
+  height: 56px;
+  border: 1.5px solid var(--accent-deep);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-deep);
+}
+
+.badge-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+/* ---------- section heading ---------- */
+
+.section-head {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto 36px;
+}
+
+.section-head h2 {
+  font-size: clamp(26px, 3vw, 34px);
+  margin-top: 10px;
+}
+
+/* ---------- editorial card (how it works / differentiator) ---------- */
+
+.ed-card {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 26px 22px;
+}
+
+.ed-card-icon {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid var(--accent-deep);
+  color: var(--accent-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-family: var(--display);
+  font-weight: 600;
+  font-variant-numeric: oldstyle-nums;
+}
+
+.ed-card h3 {
+  font-size: 16px;
   margin-bottom: 8px;
 }
-.skel-line.w-100 { width: 100%; }
-.skel-line.w-90 { width: 90%; }
-.skel-line.w-70 { width: 70%; }
-.skel-line.w-50 { width: 50%; }
-.skel-line.w-30 { width: 30%; }
 
-.skel-tag {
-  display: inline-block;
-  height: 18px;
-  width: 84px;
-  margin-right: 8px;
-  border: 1px solid var(--border-strong);
+.ed-card p {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ---------- dark CTA panel ---------- */
+
+.cta-dark {
+  background: var(--surface-dark);
+  color: var(--on-dark);
+  padding: 52px 40px;
+  text-align: center;
+}
+
+.cta-dark h2 {
+  color: var(--on-dark);
+  font-size: clamp(24px, 3vw, 32px);
+  margin-bottom: 14px;
+}
+
+.cta-dark p {
+  color: var(--on-dark-muted);
+  max-width: 520px;
+  margin: 0 auto 26px;
+  font-size: 14.5px;
+}
+
+/* =========================================================================
+   SKELETON LOADING — content-shaped atoms, not generic shimmer blocks.
+   Each skeleton is composed to mirror the exact shape of the real content
+   it stands in for (title bar, meta fragments, paragraph lines, badge
+   circles) so there is zero layout shift on load, and uses a soft pulse
+   (opacity breathing) rather than an animated shimmer sweep.
+   ========================================================================= */
+
+@keyframes skel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.skel {
+  background: #e7ddc5;
+  animation: skel-pulse 1.7s ease-in-out infinite;
+}
+
+.skel-text {
+  height: 11px;
 }
 
 .skel-title {
   height: 22px;
-  width: 60%;
-  margin-bottom: 12px;
+}
+
+.skel-circle {
+  border-radius: 50%;
+}
+
+.skel-tag {
+  height: 20px;
+  width: 80px;
 }
 
 .skel-panel {
   border: var(--border-w) solid var(--border);
-  background: var(--bg-panel);
-  padding: 24px;
+  background: var(--bg-card);
+  padding: 26px;
 }
 
 .skel-panel-header {
@@ -508,16 +801,6 @@ hr.rule {
   justify-content: space-between;
   align-items: center;
   border-bottom: var(--border-w) solid var(--border);
-  margin: -24px -24px 18px;
-  padding: 12px 20px;
-  font-family: var(--sans);
-  font-size: 12px;
-  font-style: italic;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-}
-
-.skel-cursor {
-  display: none;
+  margin: -26px -26px 20px;
+  padding: 13px 20px;
 }

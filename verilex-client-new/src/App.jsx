@@ -108,6 +108,18 @@ function AuthControls() {
   );
 }
 
+function ScaleIcon() {
+  return (
+    <svg className="brand-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M16 3v24" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 29h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M16 7 6 10l4.5 9a5 5 0 0 0 9 0L16 7Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M16 7l10 3-4.5 9a5 5 0 0 1-9 0L16 7Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <circle cx="16" cy="5" r="2" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 export default function App() {
   const { status } = useAuth();
   const homeHref = status === AUTH_STATUS.AUTHENTICATED ? '/app' : '/';
@@ -116,8 +128,8 @@ export default function App() {
     <div className="shell">
       <header className="topbar">
         <Link to={homeHref} className="brand" style={{ textDecoration: 'none' }}>
+          <ScaleIcon />
           <span className="brand-mark">Verilex</span>
-          <span className="brand-sub">Semantic Legal Discovery &amp; Explanation</span>
         </Link>
         <div className="row" style={{ gap: 20 }}>
           {status === AUTH_STATUS.AUTHENTICATED && (
@@ -187,8 +199,37 @@ export default function App() {
       </div>
 
       <footer className="footer">
-        <span>Verilex — Not a Lawyer · Not Legal Advice · Source-Grounded Explanation Only</span>
-        <span>The Database Is a Cache &amp; Index, Never the Authority</span>
+        <div className="footer-grid">
+          <div>
+            <div className="row" style={{ gap: 10, marginBottom: 14 }}>
+              <ScaleIcon />
+              <span className="brand-mark" style={{ color: 'var(--on-dark)' }}>Verilex</span>
+            </div>
+            <p style={{ maxWidth: 320, fontSize: 13.5, lineHeight: 1.6, margin: 0 }}>
+              Semantic legal discovery and explanation for Indian law — grounded in retrievable
+              statutes, provisions and judgments, never invented.
+            </p>
+          </div>
+          <div>
+            <div className="footer-col-title">Application</div>
+            <div className="footer-links">
+              <Link to={homeHref}>Home</Link>
+              <Link to="/login">Sign In</Link>
+            </div>
+          </div>
+          <div>
+            <div className="footer-col-title">Trust &amp; Limits</div>
+            <div className="footer-links">
+              <span>Not a Lawyer</span>
+              <span>Not Legal Advice</span>
+              <span>Source-Grounded Explanation Only</span>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <span>Verilex</span>
+          <span>The Database Is a Cache &amp; Index, Never the Authority</span>
+        </div>
       </footer>
     </div>
   );

@@ -15,7 +15,7 @@ export default function StarredPage() {
   }, []);
 
   if (error) return <div className="notice">Error: {error}</div>;
-  if (!starred) return <SkeletonResultsList count={3} />;
+  if (!starred) return <SkeletonResultsList count={3} showScenario={false} />;
 
   return (
     <div className="stack">

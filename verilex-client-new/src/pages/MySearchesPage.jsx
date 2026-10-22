@@ -15,7 +15,7 @@ export default function MySearchesPage() {
   }, []);
 
   if (error) return <div className="notice">Error: {error}</div>;
-  if (!searches) return <SkeletonResultsList count={3} />;
+  if (!searches) return <SkeletonResultsList count={3} showScenario={false} />;
 
   return (
     <div className="stack">
