@@ -1,0 +1,15 @@
+{
+  "name": "verilex-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "remotion render src/index.jsx DemoVideo out/verilex-demo.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.230",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.230"
+  }
+}
